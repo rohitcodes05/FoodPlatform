@@ -59,3 +59,10 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 .env.*
 !.env.example
 
+
+/generated/prisma
+
+# Local AI/agent tool files
+/.agents
+/.claude
+/.windsurf
