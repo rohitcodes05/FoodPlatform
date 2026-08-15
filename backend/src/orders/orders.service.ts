@@ -41,7 +41,7 @@ export class OrdersService {
 
           // 4. Validate Products & Calculate Total
           let totalAmount = new Prisma.Decimal(0);
-          const orderItemsData: Prisma.OrderItemUncheckedCreateWithoutOrderInput[] = [];
+          const orderItemsData: Prisma.OrderItemCreateWithoutOrderInput[] = [];
 
           for (const item of cart.items) {
             if (!item.product.isAvailable) {
@@ -54,7 +54,7 @@ export class OrdersService {
             totalAmount = totalAmount.add(itemTotal);
 
             orderItemsData.push({
-              productId: item.productId,
+              product: { connect: { id: item.productId } },
               purchasePrice: price,
               quantity: quantity,
             });
@@ -63,8 +63,8 @@ export class OrdersService {
           // 5. Create Order & OrderAddressSnapshot
           const order = await tx.order.create({
             data: {
-              userId,
-              fulfillmentPointId: fulfillmentPoint.id,
+              user: { connect: { id: userId } },
+              fulfillmentPoint: { connect: { id: fulfillmentPoint.id } },
               totalAmount,
               status: 'PENDING',
               items: {
@@ -79,7 +79,7 @@ export class OrdersService {
                   country: address.country,
                 },
               },
-            } as any, // Cast required: Prisma XOR typings fail to infer Without<OrderCreateInput, OrderUncheckedCreateInput> when mixing scalar FKs (userId) and nested relational creates (items.create) in a single payload
+            } as any, // REQUIRED CAST: Prisma Runtime demands strict relational 'connect' syntax for user and fulfillmentPoint alongside nested 'items.create', but Prisma's generated TypeScript XOR types (Without<OrderUncheckedCreateInput, OrderCreateInput> & OrderCreateInput) fail to resolve this valid shape and throw TS2353 at compile time.
             include: {
               items: { include: { product: true } },
               address: true,
