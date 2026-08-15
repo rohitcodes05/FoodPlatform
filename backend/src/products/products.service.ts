@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GetProductsFilterDto } from './dto/get-products-filter.dto';
-import { Prisma } from '../../generated/prisma/client.js';
+import { Prisma, ProductType } from '../../generated/prisma/client.js';
 
 @Injectable()
 export class ProductsService {
@@ -56,6 +56,41 @@ export class ProductsService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async createProduct(data: { name: string; description?: string; type: ProductType; price: number; isAvailable?: boolean; categoryIds?: string[] }) {
+    return this.prisma.product.create({
+      data: {
+        name: data.name,
+        description: data.description,
+        type: data.type,
+        price: data.price,
+        isAvailable: data.isAvailable ?? true,
+        categories: {
+          connect: data.categoryIds?.map(id => ({ id })) || []
+        }
+      },
+      include: { categories: true }
+    });
+  }
+
+  async updateProduct(id: string, data: { name?: string; description?: string; type?: ProductType; price?: number; isAvailable?: boolean; categoryIds?: string[] }) {
+    return this.prisma.product.update({
+      where: { id },
+      data: {
+        name: data.name,
+        description: data.description,
+        type: data.type,
+        price: data.price,
+        isAvailable: data.isAvailable,
+        ...(data.categoryIds && {
+          categories: {
+            set: data.categoryIds.map(catId => ({ id: catId }))
+          }
+        })
+      },
+      include: { categories: true }
+    });
   }
 
   async findOne(id: string) {

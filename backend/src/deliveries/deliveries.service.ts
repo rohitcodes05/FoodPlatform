@@ -59,4 +59,12 @@ export class DeliveriesService {
       },
     });
   }
+
+  // Admin Methods
+  async findAllAdmin() {
+    return this.prisma.delivery.findMany({
+      include: { order: { select: { id: true, userId: true, status: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
 }
