@@ -117,6 +117,7 @@ export class OrdersService {
         items: { include: { product: true } },
         address: true,
         payment: true,
+        delivery: true,
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -129,6 +130,7 @@ export class OrdersService {
         items: { include: { product: true } },
         address: true,
         payment: true,
+        delivery: true,
       },
     });
     if (!order || order.userId !== userId) {
