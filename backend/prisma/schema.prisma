@@ -58,12 +58,11 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  roles       UserRole[]
-  vendorStaff VendorStaff[]
-  addresses   Address[]
-  orders      Order[]
-  reviews     Review[]
-  cart        Cart?
+  roles     UserRole[]
+  addresses Address[]
+  orders    Order[]
+  reviews   Review[]
+  cart      Cart?
 }
 
 model UserRole {
@@ -77,28 +76,6 @@ model UserRole {
   @@unique([userId, role])
 }
 
-model Vendor {
-  id        String   @id @default(uuid())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  stores Store[]
-  staff  VendorStaff[]
-}
-
-model VendorStaff {
-  id        String   @id @default(uuid())
-  userId    String
-  vendorId  String
-  createdAt DateTime @default(now())
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, vendorId])
-}
-
 model Category {
   id       String    @id @default(uuid())
   name     String
@@ -110,50 +87,14 @@ model Product {
   name        String
   description String?
   type        ProductType
+  price       Decimal     @db.Decimal(12, 2)
+  isAvailable Boolean     @default(true)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  categories    Category[]
-  storeProducts StoreProduct[]
-}
-
-model Store {
-  id        String   @id @default(uuid())
-  vendorId  String
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  vendor   Vendor         @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  products StoreProduct[]
-}
-
-model StoreProduct {
-  id          String   @id @default(uuid())
-  storeId     String
-  productId   String
-  price       Decimal  @db.Decimal(12, 2)
-  isAvailable Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  product    Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
-  inventory  Inventory?
+  categories Category[]
   cartItems  CartItem[]
   orderItems OrderItem[]
-
-  @@unique([storeId, productId])
-}
-
-model Inventory {
-  id             String   @id @default(uuid())
-  storeProductId String   @unique
-  quantity       Decimal  @db.Decimal(10, 2)
-  unit           String
-  updatedAt      DateTime @updatedAt
-
-  storeProduct StoreProduct @relation(fields: [storeProductId], references: [id], onDelete: Cascade)
 }
 
 model Address {
@@ -181,44 +122,46 @@ model Cart {
 }
 
 model CartItem {
-  id             String   @id @default(uuid())
-  cartId         String
-  storeProductId String
-  quantity       Decimal  @db.Decimal(10, 2)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id        String   @id @default(uuid())
+  cartId    String
+  productId String
+  quantity  Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  cart         Cart         @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  storeProduct StoreProduct @relation(fields: [storeProductId], references: [id], onDelete: Cascade)
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@unique([cartId, storeProductId])
+  @@unique([cartId, productId])
 }
 
 model Order {
-  id          String      @id @default(uuid())
-  userId      String
-  status      OrderStatus @default(PENDING)
-  totalAmount Decimal     @db.Decimal(12, 2)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id                 String      @id @default(uuid())
+  userId             String
+  fulfillmentPointId String
+  status             OrderStatus @default(PENDING)
+  totalAmount        Decimal     @db.Decimal(12, 2)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
-  user     User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
-  items    OrderItem[]
-  address  OrderAddressSnapshot?
-  payment  Payment?
-  delivery Delivery?
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  fulfillmentPoint FulfillmentPoint      @relation(fields: [fulfillmentPointId], references: [id], onDelete: Restrict)
+  items            OrderItem[]
+  address          OrderAddressSnapshot?
+  payment          Payment?
+  delivery         Delivery?
 }
 
 model OrderItem {
-  id             String  @id @default(uuid())
-  orderId        String
-  storeProductId String
-  purchasePrice  Decimal @db.Decimal(12, 2)
-  quantity       Decimal @db.Decimal(10, 2)
+  id            String  @id @default(uuid())
+  orderId       String
+  productId     String
+  purchasePrice Decimal @db.Decimal(12, 2)
+  quantity      Decimal @db.Decimal(10, 2)
 
-  order        Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  storeProduct StoreProduct @relation(fields: [storeProductId], references: [id], onDelete: Restrict)
-  review       Review?
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  review  Review?
 }
 
 model OrderAddressSnapshot {
@@ -270,4 +213,19 @@ model Review {
   orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
 
   @@unique([userId, orderItemId])
+}
+
+model FulfillmentPoint {
+  id         String   @id @default(uuid())
+  name       String
+  street     String
+  city       String
+  state      String
+  postalCode String
+  country    String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  orders Order[]
 }
