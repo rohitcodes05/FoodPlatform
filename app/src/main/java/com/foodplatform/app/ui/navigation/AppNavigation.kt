@@ -57,17 +57,47 @@ fun AppNavigation(authViewModel: AuthViewModel) {
             }
         }
         SessionState.AUTHENTICATED -> {
-            NavHost(navController = navController, startDestination = "home") {
-                composable("home") {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Welcome to FoodPlatform!")
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = { authViewModel.logout() }) {
-                                Text("Logout")
-                            }
-                        }
-                    }
+            NavHost(navController = navController, startDestination = "catalog") {
+                composable("catalog") {
+                    val productRepository = com.foodplatform.app.data.repository.ProductRepository(
+                        com.foodplatform.app.data.remote.NetworkModule.provideProductApi(
+                            com.foodplatform.app.data.remote.NetworkModule.provideRetrofit(
+                                com.foodplatform.app.data.local.SecureTokenStorageImpl(androidx.compose.ui.platform.LocalContext.current),
+                                onUnauthorized = { SessionManager.setUnauthenticated() }
+                            )
+                        )
+                    )
+                    val catalogViewModel: com.foodplatform.app.ui.catalog.CatalogViewModel = viewModel(
+                        factory = com.foodplatform.app.ui.catalog.CatalogViewModelFactory(productRepository)
+                    )
+
+                    com.foodplatform.app.ui.catalog.CatalogScreen(
+                        viewModel = catalogViewModel,
+                        onNavigateToProduct = { productId -> navController.navigate("product_detail/$productId") },
+                        onLogout = { authViewModel.logout() }
+                    )
+                }
+
+                composable("product_detail/{productId}") { backStackEntry ->
+                    val productId = backStackEntry.arguments?.getString("productId") ?: return@composable
+
+                    val productRepository = com.foodplatform.app.data.repository.ProductRepository(
+                        com.foodplatform.app.data.remote.NetworkModule.provideProductApi(
+                            com.foodplatform.app.data.remote.NetworkModule.provideRetrofit(
+                                com.foodplatform.app.data.local.SecureTokenStorageImpl(androidx.compose.ui.platform.LocalContext.current),
+                                onUnauthorized = { SessionManager.setUnauthenticated() }
+                            )
+                        )
+                    )
+                    val detailViewModel: com.foodplatform.app.ui.catalog.ProductDetailViewModel = viewModel(
+                        factory = com.foodplatform.app.ui.catalog.ProductDetailViewModelFactory(productRepository)
+                    )
+
+                    com.foodplatform.app.ui.catalog.ProductDetailScreen(
+                        productId = productId,
+                        viewModel = detailViewModel,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
                 }
             }
         }

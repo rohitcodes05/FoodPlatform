@@ -1,0 +1,91 @@
+package com.foodplatform.app.ui.catalog
+
+import com.foodplatform.app.data.remote.PaginatedResponse
+import com.foodplatform.app.data.remote.PaginationMeta
+import com.foodplatform.app.data.remote.ProductApi
+import com.foodplatform.app.data.remote.ProductDto
+import com.foodplatform.app.data.remote.ProductType
+import com.foodplatform.app.data.repository.ProductRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.*
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class CatalogViewModelTest {
+
+    private lateinit var fakeApi: FakeProductApi
+    private lateinit var repository: ProductRepository
+    private lateinit var viewModel: CatalogViewModel
+    private val testDispatcher = StandardTestDispatcher()
+
+    class FakeProductApi : ProductApi {
+        var page1Response: PaginatedResponse<ProductDto>? = null
+        var page2Response: PaginatedResponse<ProductDto>? = null
+
+        override suspend fun getProducts(page: Int?, limit: Int?, categoryId: String?, type: String?, search: String?): PaginatedResponse<ProductDto> {
+            return if (page == 1) page1Response!! else page2Response!!
+        }
+
+        override suspend fun getProductById(id: String): ProductDto {
+            throw NotImplementedError()
+        }
+    }
+
+    @Before
+    fun setup() {
+        Dispatchers.setMain(testDispatcher)
+        fakeApi = FakeProductApi()
+        repository = ProductRepository(fakeApi)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `init loads first page`() = runTest(testDispatcher) {
+        val dummyProducts = listOf(
+            ProductDto("1", "Burger", "Tasty", ProductType.COOKED_FOOD, 5.99, true)
+        )
+        fakeApi.page1Response = PaginatedResponse(dummyProducts, PaginationMeta(1, 1, 20, 1))
+
+        viewModel = CatalogViewModel(repository)
+        
+        // Wait for coroutines to complete
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state is CatalogUiState.Success)
+        val successState = state as CatalogUiState.Success
+        assertEquals(1, successState.products.size)
+        assertTrue(successState.isEndReached)
+    }
+
+    @Test
+    fun `loadNextPage appends products`() = runTest(testDispatcher) {
+        val page1 = listOf(ProductDto("1", "Burger", "Tasty", ProductType.COOKED_FOOD, 5.99, true))
+        val page2 = listOf(ProductDto("2", "Pizza", "Cheesy", ProductType.COOKED_FOOD, 12.99, true))
+        
+        fakeApi.page1Response = PaginatedResponse(page1, PaginationMeta(2, 1, 1, 2))
+        fakeApi.page2Response = PaginatedResponse(page2, PaginationMeta(2, 2, 1, 2))
+
+        viewModel = CatalogViewModel(repository)
+        advanceUntilIdle()
+        
+        // Trigger next page
+        viewModel.loadNextPage()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state is CatalogUiState.Success)
+        val successState = state as CatalogUiState.Success
+        assertEquals(2, successState.products.size)
+        assertTrue(successState.isEndReached)
+    }
+}
