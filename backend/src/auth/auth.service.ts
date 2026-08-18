@@ -1,8 +1,9 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+﻿import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import * as bcrypt from 'bcryptjs';
 import { Role } from '../../generated/prisma/client.js';
 
@@ -17,9 +18,9 @@ export class AuthService {
     const existingUser = await this.prisma.user.findUnique({
       where: { email: registerDto.email },
     });
-    
+
     if (existingUser) {
-      throw new ConflictException('Email already in use'); 
+      throw new ConflictException('Email already in use');
     }
 
     const passwordHash = await bcrypt.hash(registerDto.password, 10);
@@ -61,5 +62,19 @@ export class AuthService {
     return {
       accessToken: this.jwtService.sign(payload),
     };
+  }
+
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(updateProfileDto.name !== undefined && { name: updateProfileDto.name }),
+        ...(updateProfileDto.phone !== undefined && { phone: updateProfileDto.phone }),
+      },
+      include: { roles: true },
+    });
+
+    const { passwordHash: _, ...result } = user;
+    return result;
   }
 }

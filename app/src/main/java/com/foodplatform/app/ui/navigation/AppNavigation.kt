@@ -110,6 +110,12 @@ fun AppNavigation(authViewModel: AuthViewModel) {
                 )
             }
 
+            val adminRepository = remember {
+                com.foodplatform.app.data.repository.AdminRepository(
+                    com.foodplatform.app.data.remote.NetworkModule.provideAdminApi(retrofit)
+                )
+            }
+
             NavHost(navController = navController, startDestination = "auth_flow") {
                 navigation(startDestination = "catalog", route = "auth_flow") {
                     composable("catalog") { backStackEntry ->
@@ -221,6 +227,7 @@ fun AppNavigation(authViewModel: AuthViewModel) {
                             viewModel = profileViewModel,
                             onNavigateToOrderHistory = { navController.navigate("order_history") },
                             onNavigateToAddresses = { navController.navigate("addresses") },
+                            onNavigateToAdmin = { navController.navigate("admin_dashboard") },
                             onNavigateToLogin = {
                                 SessionManager.setUnauthenticated()
                             },
@@ -261,6 +268,16 @@ fun AppNavigation(authViewModel: AuthViewModel) {
                         com.foodplatform.app.ui.orders.OrderDetailsScreen(
                             orderId = orderId,
                             viewModel = ordersViewModel,
+                            onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
+
+                    composable("admin_dashboard") {
+                        val adminViewModel: com.foodplatform.app.ui.admin.AdminDashboardViewModel = viewModel(
+                            factory = com.foodplatform.app.ui.admin.AdminDashboardViewModelFactory(adminRepository)
+                        )
+                        com.foodplatform.app.ui.admin.AdminDashboardScreen(
+                            viewModel = adminViewModel,
                             onNavigateBack = { navController.popBackStack() }
                         )
                     }

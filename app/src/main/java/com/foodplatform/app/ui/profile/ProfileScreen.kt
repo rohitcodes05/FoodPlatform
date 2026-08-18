@@ -1,4 +1,4 @@
-package com.foodplatform.app.ui.profile
+﻿package com.foodplatform.app.ui.profile
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.filled.Edit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -20,11 +21,18 @@ fun ProfileScreen(
     viewModel: ProfileViewModel,
     onNavigateToOrderHistory: () -> Unit,
     onNavigateToAddresses: () -> Unit,
+    onNavigateToAdmin: () -> Unit,
     onNavigateToLogin: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val logoutEvent by viewModel.logoutEvent.collectAsState()
+    val isUpdating by viewModel.isUpdating.collectAsState()
+    val updateError by viewModel.updateError.collectAsState()
+
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editName by remember { mutableStateOf("") }
+    var editPhone by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         viewModel.loadProfile()
@@ -44,6 +52,18 @@ fun ProfileScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    if (uiState is ProfileUiState.Success) {
+                        IconButton(onClick = {
+                            val user = (uiState as ProfileUiState.Success).user
+                            editName = user.name
+                            editPhone = user.phone ?: ""
+                            showEditDialog = true
+                        }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit Profile")
+                        }
                     }
                 }
             )
@@ -83,7 +103,7 @@ fun ProfileScreen(
                         Text(state.user.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                         Text(state.user.email, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(state.user.phone, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(state.user.phone ?: "No phone number", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                         Spacer(modifier = Modifier.height(32.dp))
 
@@ -107,6 +127,22 @@ fun ProfileScreen(
                             Text("My Addresses")
                         }
 
+                        if (state.user.roles?.any { it.role == "ADMIN" } == true) {
+                            Spacer(modifier = Modifier.height(32.dp))
+                            HorizontalDivider()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("Admin Settings", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Button(
+                                onClick = onNavigateToAdmin,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                            ) {
+                                Text("Admin Dashboard")
+                            }
+                        }
+
                         Spacer(modifier = Modifier.weight(1f))
 
                         OutlinedButton(
@@ -122,5 +158,66 @@ fun ProfileScreen(
                 }
             }
         }
+    }
+
+    if (showEditDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                if (!isUpdating) {
+                    showEditDialog = false
+                    viewModel.clearUpdateError()
+                }
+            },
+            title = { Text("Edit Profile") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = editName,
+                        onValueChange = { editName = it },
+                        label = { Text("Name") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = editPhone,
+                        onValueChange = { editPhone = it },
+                        label = { Text("Phone") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    updateError?.let {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.updateProfile(editName, editPhone.takeIf { it.isNotBlank() })
+                        showEditDialog = false
+                    },
+                    enabled = !isUpdating && editName.isNotBlank()
+                ) {
+                    if (isUpdating) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text("Save")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showEditDialog = false
+                        viewModel.clearUpdateError()
+                    },
+                    enabled = !isUpdating
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

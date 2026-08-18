@@ -5,6 +5,7 @@ data class CreateOrderRequest(
 )
 
 data class DeliveryDto(
+    val id: String,
     val status: String,
     val trackingCode: String? = null
 )

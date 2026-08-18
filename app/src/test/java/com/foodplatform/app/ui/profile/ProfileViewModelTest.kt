@@ -32,6 +32,7 @@ class ProfileViewModelTest {
         override suspend fun register(request: RegisterRequest): Response<UserResponse> = Response.success(null)
         override suspend fun login(request: LoginRequest): Response<com.foodplatform.app.data.remote.LoginResponse> = Response.success(null)
         override suspend fun getMe(): Response<UserResponse> = Response.success(null)
+        override suspend fun updateProfile(request: com.foodplatform.app.data.remote.UpdateProfileRequest): Response<UserResponse> = Response.success(null)
     }
 
     class FakeTokenStorage : SecureTokenStorage {

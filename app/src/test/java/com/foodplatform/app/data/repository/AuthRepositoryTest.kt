@@ -21,11 +21,13 @@ class AuthRepositoryTest {
     class FakeAuthApi(
         var loginResponse: Response<LoginResponse>? = null,
         var registerResponse: Response<UserResponse>? = null,
-        var getMeResponse: Response<UserResponse>? = null
+        var getMeResponse: Response<UserResponse>? = null,
+        var updateProfileResponse: Response<UserResponse>? = null
     ) : AuthApi {
         override suspend fun register(request: RegisterRequest): Response<UserResponse> = registerResponse ?: Response.success(null)
         override suspend fun login(request: LoginRequest): Response<LoginResponse> = loginResponse ?: Response.success(null)
         override suspend fun getMe(): Response<UserResponse> = getMeResponse ?: Response.success(null)
+        override suspend fun updateProfile(request: UpdateProfileRequest): Response<UserResponse> = updateProfileResponse ?: Response.success(null)
     }
 
     @Test

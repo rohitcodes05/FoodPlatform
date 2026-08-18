@@ -1,4 +1,4 @@
-package com.foodplatform.app.data.repository
+﻿package com.foodplatform.app.data.repository
 
 import com.foodplatform.app.data.local.SecureTokenStorage
 import com.foodplatform.app.data.remote.AuthApi
@@ -31,7 +31,7 @@ open class AuthRepository(
             // 2. Auto-Login
             val loginRequest = LoginRequest(email = request.email, password = request.password)
             val loginResponse = api.login(loginRequest)
-            
+
             if (loginResponse.isSuccessful) {
                 val token = loginResponse.body()?.accessToken
                 if (!token.isNullOrEmpty()) {
@@ -71,7 +71,7 @@ open class AuthRepository(
         if (tokenStorage.getToken().isNullOrEmpty()) {
             return@withContext AuthResult.Error("No local token found.")
         }
-        
+
         try {
             val response = api.getMe()
             if (response.isSuccessful) {
@@ -93,6 +93,28 @@ open class AuthRepository(
     open fun logout() {
         // Backend stateless JWT: client-side clear is sufficient.
         tokenStorage.clearToken()
+    }
+
+    open suspend fun updateProfile(name: String?, phone: String?): AuthResult<UserResponse> = withContext(Dispatchers.IO) {
+        if (tokenStorage.getToken().isNullOrEmpty()) {
+            return@withContext AuthResult.Error("No local token found.")
+        }
+
+        try {
+            val response = api.updateProfile(com.foodplatform.app.data.remote.UpdateProfileRequest(name, phone))
+            if (response.isSuccessful) {
+                val user = response.body()
+                if (user != null) {
+                    AuthResult.Success(user)
+                } else {
+                    AuthResult.Error("Empty user data.")
+                }
+            } else {
+                AuthResult.Error(parseErrorMessage(response.errorBody()?.string()))
+            }
+        } catch (e: Exception) {
+            AuthResult.Error("Network error: ${e.message ?: "Unknown error"}")
+        }
     }
 
     open fun hasToken(): Boolean {

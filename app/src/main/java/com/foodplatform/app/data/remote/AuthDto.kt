@@ -22,7 +22,17 @@ data class UserResponse(
     val id: String,
     val email: String,
     val name: String,
-    val phone: String,
+    val phone: String?,
     val createdAt: String,
-    val updatedAt: String
+    val updatedAt: String,
+    val roles: List<RoleDto>? = null
+)
+
+data class RoleDto(
+    val role: String
+)
+
+data class UpdateProfileRequest(
+    val name: String?,
+    val phone: String?
 )

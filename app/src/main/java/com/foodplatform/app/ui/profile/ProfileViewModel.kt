@@ -16,6 +16,12 @@ class ProfileViewModel(
     private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
+    private val _isUpdating = MutableStateFlow(false)
+    val isUpdating: StateFlow<Boolean> = _isUpdating.asStateFlow()
+
+    private val _updateError = MutableStateFlow<String?>(null)
+    val updateError: StateFlow<String?> = _updateError.asStateFlow()
+
     private val _logoutEvent = MutableStateFlow(false)
     val logoutEvent: StateFlow<Boolean> = _logoutEvent.asStateFlow()
 
@@ -31,6 +37,27 @@ class ProfileViewModel(
                 }
             }
         }
+    }
+
+    fun updateProfile(name: String, phone: String?) {
+        _isUpdating.value = true
+        _updateError.value = null
+        viewModelScope.launch {
+            when (val result = authRepository.updateProfile(name, phone)) {
+                is AuthResult.Success -> {
+                    _isUpdating.value = false
+                    _uiState.value = ProfileUiState.Success(result.data)
+                }
+                is AuthResult.Error -> {
+                    _isUpdating.value = false
+                    _updateError.value = result.message
+                }
+            }
+        }
+    }
+
+    fun clearUpdateError() {
+        _updateError.value = null
     }
 
     fun logout() {

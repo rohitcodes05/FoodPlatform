@@ -57,6 +57,10 @@ object NetworkModule {
         return retrofit.create(OrderApi::class.java)
     }
 
+    fun provideAdminApi(retrofit: Retrofit): AdminApi {
+        return retrofit.create(AdminApi::class.java)
+    }
+
     fun provideCategoryApi(retrofit: Retrofit): CategoryApi {
         return retrofit.create(CategoryApi::class.java)
     }
