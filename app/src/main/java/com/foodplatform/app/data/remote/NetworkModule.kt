@@ -48,4 +48,12 @@ object NetworkModule {
     fun provideCartApi(retrofit: Retrofit): CartApi {
         return retrofit.create(CartApi::class.java)
     }
+
+    fun provideAddressApi(retrofit: Retrofit): AddressApi {
+        return retrofit.create(AddressApi::class.java)
+    }
+
+    fun provideOrderApi(retrofit: Retrofit): OrderApi {
+        return retrofit.create(OrderApi::class.java)
+    }
 }

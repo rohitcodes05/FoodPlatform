@@ -25,6 +25,7 @@ import com.foodplatform.app.data.remote.CartItemDto
 fun CartScreen(
     viewModel: CartViewModel,
     onNavigateBack: () -> Unit,
+    onNavigateToCheckout: () -> Unit,
     snackbarHostState: SnackbarHostState
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -118,11 +119,11 @@ fun CartScreen(
                                     }
                                     Spacer(modifier = Modifier.height(16.dp))
                                     Button(
-                                        onClick = { /* disabled */ },
+                                        onClick = onNavigateToCheckout,
                                         modifier = Modifier.fillMaxWidth(),
-                                        enabled = false
+                                        enabled = !isActionLoading
                                     ) {
-                                        Text("Checkout coming soon")
+                                        Text("Checkout")
                                     }
                                     Spacer(modifier = Modifier.height(8.dp))
                                     TextButton(

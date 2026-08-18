@@ -79,6 +79,18 @@ fun AppNavigation(authViewModel: AuthViewModel) {
                 )
             }
 
+            val addressRepository = remember {
+                com.foodplatform.app.data.repository.AddressRepository(
+                    com.foodplatform.app.data.remote.NetworkModule.provideAddressApi(retrofit)
+                )
+            }
+
+            val orderRepository = remember {
+                com.foodplatform.app.data.repository.OrderRepository(
+                    com.foodplatform.app.data.remote.NetworkModule.provideOrderApi(retrofit)
+                )
+            }
+
             NavHost(navController = navController, startDestination = "auth_flow") {
                 navigation(startDestination = "catalog", route = "auth_flow") {
                     composable("catalog") { backStackEntry ->
@@ -144,6 +156,39 @@ fun AppNavigation(authViewModel: AuthViewModel) {
                         com.foodplatform.app.ui.cart.CartScreen(
                             viewModel = cartViewModel,
                             onNavigateBack = { navController.popBackStack() },
+                            onNavigateToCheckout = { navController.navigate("checkout") },
+                            snackbarHostState = snackbarHostState
+                        )
+                    }
+
+                    composable("checkout") { backStackEntry ->
+                        val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("auth_flow") }
+                        val cartViewModel: com.foodplatform.app.ui.cart.CartViewModel = viewModel(
+                            parentEntry,
+                            factory = com.foodplatform.app.ui.cart.CartViewModelFactory(cartRepository)
+                        )
+                        val cartUiState by cartViewModel.uiState.collectAsState()
+                        val cartItemCount = if (cartUiState is com.foodplatform.app.ui.cart.CartUiState.Success) {
+                            (cartUiState as com.foodplatform.app.ui.cart.CartUiState.Success).cart.items.sumOf { it.quantity.toInt() }
+                        } else 0
+                        val cartTotalAmount = if (cartUiState is com.foodplatform.app.ui.cart.CartUiState.Success) {
+                            (cartUiState as com.foodplatform.app.ui.cart.CartUiState.Success).cart.items.sumOf { it.quantity.toInt() * it.product.price.toDouble() }.toString()
+                        } else "0"
+
+                        val checkoutViewModel: com.foodplatform.app.ui.checkout.CheckoutViewModel = viewModel(
+                            factory = com.foodplatform.app.ui.checkout.CheckoutViewModelFactory(addressRepository, orderRepository)
+                        )
+                        val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+
+                        com.foodplatform.app.ui.checkout.CheckoutScreen(
+                            viewModel = checkoutViewModel,
+                            cartItemCount = cartItemCount,
+                            cartTotalAmount = cartTotalAmount,
+                            onNavigateBack = { navController.popBackStack() },
+                            onOrderSuccess = {
+                                cartViewModel.loadCart() // Force sync to show empty cart
+                                navController.popBackStack("catalog", inclusive = false)
+                            },
                             snackbarHostState = snackbarHostState
                         )
                     }
