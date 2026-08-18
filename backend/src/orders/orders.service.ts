@@ -79,10 +79,23 @@ export class OrdersService {
                   country: address.country,
                 },
               },
+              payment: {
+                create: {
+                  amount: totalAmount,
+                  status: 'PENDING',
+                },
+              },
+              delivery: {
+                create: {
+                  status: 'PENDING',
+                },
+              },
             } as any, // REQUIRED CAST: Prisma Runtime demands strict relational 'connect' syntax for user and fulfillmentPoint alongside nested 'items.create', but Prisma's generated TypeScript XOR types (Without<OrderUncheckedCreateInput, OrderCreateInput> & OrderCreateInput) fail to resolve this valid shape and throw TS2353 at compile time.
             include: {
               items: { include: { product: true } },
               address: true,
+              payment: true,
+              delivery: true,
             },
           });
 
