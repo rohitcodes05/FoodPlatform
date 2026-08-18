@@ -38,7 +38,9 @@ class CheckoutViewModelTest {
     }
 
     class FakeOrderApi : OrderApi {
-        override suspend fun createOrder(request: CreateOrderRequest): Response<OrderDto> = Response.success(OrderDto("1", "user", "1", "PENDING"))
+        override suspend fun createOrder(request: CreateOrderRequest): Response<OrderDto> = Response.success(OrderDto("1", "user", "1", "PENDING", "2026-08-18T10:00:00Z"))
+        override suspend fun getOrders(): Response<List<OrderDto>> = Response.success(emptyList())
+        override suspend fun getOrderById(id: String): Response<OrderDto> = Response.success(OrderDto("1", "user", "1", "PENDING", "2026-08-18T10:00:00Z"))
     }
 
     class FakeAddressRepository : AddressRepository(FakeAddressApi()) {
@@ -52,7 +54,7 @@ class CheckoutViewModelTest {
     }
 
     class FakeOrderRepository : OrderRepository(FakeOrderApi()) {
-        var mockResult: Result<OrderDto> = Result.success(OrderDto("1", "user", "100", "PENDING"))
+        var mockResult: Result<OrderDto> = Result.success(OrderDto("1", "user", "100", "PENDING", "2026-08-18T10:00:00Z"))
         override suspend fun createOrder(addressId: String): Result<OrderDto> = mockResult
     }
 
@@ -101,7 +103,7 @@ class CheckoutViewModelTest {
     fun `placeOrder success sets success event`() = runTest {
         val addresses = listOf(AddressDto("1", "Street", "City", "State", "123", "Country"))
         addressRepository.mockResult = Result.success(addresses)
-        orderRepository.mockResult = Result.success(OrderDto("order1", "user1", "100", "PENDING"))
+        orderRepository.mockResult = Result.success(OrderDto("order1", "user1", "100", "PENDING", "2026-08-18T10:00:00Z"))
 
         viewModel = CheckoutViewModel(addressRepository, orderRepository)
         testDispatcher.scheduler.advanceUntilIdle()

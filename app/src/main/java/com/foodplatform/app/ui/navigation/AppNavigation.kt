@@ -91,6 +91,13 @@ fun AppNavigation(authViewModel: AuthViewModel) {
                 )
             }
 
+            val authRepository = remember {
+                com.foodplatform.app.data.repository.AuthRepository(
+                    com.foodplatform.app.data.remote.NetworkModule.provideAuthApi(retrofit),
+                    com.foodplatform.app.data.local.SecureTokenStorageImpl(context)
+                )
+            }
+
             NavHost(navController = navController, startDestination = "auth_flow") {
                 navigation(startDestination = "catalog", route = "auth_flow") {
                     composable("catalog") { backStackEntry ->
@@ -114,6 +121,7 @@ fun AppNavigation(authViewModel: AuthViewModel) {
                             cartItemCount = cartItemCount,
                             onNavigateToProduct = { productId -> navController.navigate("product_detail/$productId") },
                             onNavigateToCart = { navController.navigate("cart") },
+                            onNavigateToProfile = { navController.navigate("profile") },
                             onLogout = { authViewModel.logout() }
                         )
                     }
@@ -190,6 +198,47 @@ fun AppNavigation(authViewModel: AuthViewModel) {
                                 navController.popBackStack("catalog", inclusive = false)
                             },
                             snackbarHostState = snackbarHostState
+                        )
+                    }
+
+                    composable("profile") {
+                        val profileViewModel: com.foodplatform.app.ui.profile.ProfileViewModel = viewModel(
+                            factory = com.foodplatform.app.ui.profile.ProfileViewModelFactory(authRepository)
+                        )
+                        com.foodplatform.app.ui.profile.ProfileScreen(
+                            viewModel = profileViewModel,
+                            onNavigateToOrderHistory = { navController.navigate("order_history") },
+                            onNavigateToLogin = {
+                                SessionManager.setUnauthenticated()
+                            },
+                            onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
+
+                    composable("order_history") { backStackEntry ->
+                        val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("auth_flow") }
+                        val ordersViewModel: com.foodplatform.app.ui.orders.OrdersViewModel = viewModel(
+                            parentEntry,
+                            factory = com.foodplatform.app.ui.orders.OrdersViewModelFactory(orderRepository)
+                        )
+                        com.foodplatform.app.ui.orders.OrderHistoryScreen(
+                            viewModel = ordersViewModel,
+                            onNavigateBack = { navController.popBackStack() },
+                            onNavigateToDetails = { orderId -> navController.navigate("order_details/$orderId") }
+                        )
+                    }
+
+                    composable("order_details/{orderId}") { backStackEntry ->
+                        val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("auth_flow") }
+                        val ordersViewModel: com.foodplatform.app.ui.orders.OrdersViewModel = viewModel(
+                            parentEntry,
+                            factory = com.foodplatform.app.ui.orders.OrdersViewModelFactory(orderRepository)
+                        )
+                        val orderId = backStackEntry.arguments?.getString("orderId") ?: return@composable
+                        com.foodplatform.app.ui.orders.OrderDetailsScreen(
+                            orderId = orderId,
+                            viewModel = ordersViewModel,
+                            onNavigateBack = { navController.popBackStack() }
                         )
                     }
                 }

@@ -15,12 +15,12 @@ sealed class AuthResult<out T> {
     data class Error(val message: String) : AuthResult<Nothing>()
 }
 
-class AuthRepository(
+open class AuthRepository(
     private val api: AuthApi,
     private val tokenStorage: SecureTokenStorage
 ) {
 
-    suspend fun registerAndLogin(request: RegisterRequest): AuthResult<Unit> = withContext(Dispatchers.IO) {
+    open suspend fun registerAndLogin(request: RegisterRequest): AuthResult<Unit> = withContext(Dispatchers.IO) {
         try {
             // 1. Register
             val registerResponse = api.register(request)
@@ -48,7 +48,7 @@ class AuthRepository(
         }
     }
 
-    suspend fun login(request: LoginRequest): AuthResult<Unit> = withContext(Dispatchers.IO) {
+    open suspend fun login(request: LoginRequest): AuthResult<Unit> = withContext(Dispatchers.IO) {
         try {
             val response = api.login(request)
             if (response.isSuccessful) {
@@ -67,7 +67,7 @@ class AuthRepository(
         }
     }
 
-    suspend fun getCurrentUser(): AuthResult<UserResponse> = withContext(Dispatchers.IO) {
+    open suspend fun getCurrentUser(): AuthResult<UserResponse> = withContext(Dispatchers.IO) {
         if (tokenStorage.getToken().isNullOrEmpty()) {
             return@withContext AuthResult.Error("No local token found.")
         }
@@ -90,12 +90,12 @@ class AuthRepository(
         }
     }
 
-    fun logout() {
+    open fun logout() {
         // Backend stateless JWT: client-side clear is sufficient.
         tokenStorage.clearToken()
     }
 
-    fun hasToken(): Boolean {
+    open fun hasToken(): Boolean {
         return !tokenStorage.getToken().isNullOrEmpty()
     }
 

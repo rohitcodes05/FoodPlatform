@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dining
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PestControlRodent
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.SetMeal
@@ -28,6 +29,7 @@ fun CatalogScreen(
     cartItemCount: Int,
     onNavigateToProduct: (String) -> Unit,
     onNavigateToCart: () -> Unit,
+    onNavigateToProfile: () -> Unit,
     onLogout: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -38,6 +40,9 @@ fun CatalogScreen(
             TopAppBar(
                 title = { Text("FoodPlatform Catalog") },
                 actions = {
+                    IconButton(onClick = onNavigateToProfile) {
+                        Icon(imageVector = Icons.Default.Person, contentDescription = "Profile")
+                    }
                     IconButton(onClick = onNavigateToCart) {
                         BadgedBox(
                             badge = {
