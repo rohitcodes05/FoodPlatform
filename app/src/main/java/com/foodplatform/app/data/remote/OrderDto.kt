@@ -4,6 +4,16 @@ data class CreateOrderRequest(
     val addressId: String
 )
 
+data class DeliveryDto(
+    val status: String,
+    val trackingCode: String? = null
+)
+
+data class PaymentDto(
+    val status: String,
+    val amount: String
+)
+
 data class OrderDto(
     val id: String,
     val userId: String,
@@ -11,7 +21,9 @@ data class OrderDto(
     val status: String,
     val createdAt: String,
     val items: List<OrderItemDto>? = null,
-    val address: OrderAddressSnapshotDto? = null
+    val address: OrderAddressSnapshotDto? = null,
+    val delivery: DeliveryDto? = null,
+    val payment: PaymentDto? = null
 )
 
 data class OrderItemDto(

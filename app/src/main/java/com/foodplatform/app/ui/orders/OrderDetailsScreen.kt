@@ -11,6 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.foodplatform.app.data.remote.DeliveryDto
+import com.foodplatform.app.data.remote.PaymentDto
 import com.foodplatform.app.data.remote.OrderAddressSnapshotDto
 import com.foodplatform.app.data.remote.OrderItemDto
 import com.foodplatform.app.data.remote.ReviewDto
@@ -106,7 +108,24 @@ fun OrderDetailsScreen(
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text("ID: ${order.id}")
                                     Text("Date: ${formatDate(order.createdAt)}")
-                                    Text("Status: ${order.status}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text("Status:", style = MaterialTheme.typography.bodyMedium)
+                                        OrderStatusChip(status = order.status)
+                                    }
+                                    order.payment?.let { payment ->
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Text("Payment:", style = MaterialTheme.typography.bodyMedium)
+                                            PaymentStatusChip(status = payment.status)
+                                        }
+                                    }
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text("Total: $${order.totalAmount}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 }
@@ -116,6 +135,12 @@ fun OrderDetailsScreen(
                         if (order.address != null) {
                             item {
                                 AddressDetailsCard(address = order.address)
+                            }
+                        }
+
+                        if (order.delivery != null) {
+                            item {
+                                DeliveryDetailsCard(delivery = order.delivery)
                             }
                         }
 
@@ -198,6 +223,21 @@ fun AddressDetailsCard(address: OrderAddressSnapshotDto) {
             Text(address.street)
             Text("${address.city}, ${address.state} ${address.postalCode}")
             Text(address.country)
+        }
+    }
+}
+
+@Composable
+fun DeliveryDetailsCard(delivery: com.foodplatform.app.data.remote.DeliveryDto) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Delivery Status", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+            DeliveryStatusChip(status = delivery.status)
+            if (!delivery.trackingCode.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text("Tracking: ${delivery.trackingCode}", style = MaterialTheme.typography.bodyMedium)
+            }
         }
     }
 }

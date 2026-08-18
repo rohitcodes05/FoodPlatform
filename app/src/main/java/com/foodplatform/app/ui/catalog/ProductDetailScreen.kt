@@ -166,7 +166,37 @@ fun ProductDetailScreen(
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            
+
+                            // Average rating summary (computed client-side from fetched reviews)
+                            if (state.reviews.isNotEmpty()) {
+                                val avg = state.reviews.map { it.rating }.average()
+                                val count = state.reviews.size
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Star,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = String.format("%.1f", avg),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "($count ${if (count == 1) "review" else "reviews"})",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
                             if (state.reviews.isEmpty()) {
                                 Text(
                                     text = "No reviews yet.",

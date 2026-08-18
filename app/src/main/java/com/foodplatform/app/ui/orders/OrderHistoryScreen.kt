@@ -94,24 +94,40 @@ fun OrderHistoryItem(order: OrderDto, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            // Row 1: order ID + date
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Order ID: ${order.id.take(8).uppercase()}", fontWeight = FontWeight.Bold)
-                Text(order.status, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+                Text("Order: ${order.id.take(8).uppercase()}", fontWeight = FontWeight.Bold)
                 Text(formatDate(order.createdAt), style = MaterialTheme.typography.bodyMedium)
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Row 2: status chips + total
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OrderStatusChip(status = order.status)
+                    order.delivery?.let { DeliveryStatusChip(status = it.status) }
+                }
                 Text("$${order.totalAmount}", fontWeight = FontWeight.Bold)
             }
+
+            // Row 3: items summary
             if (order.items != null && order.items.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
-                val itemsSummary = order.items.joinToString(", ") { "${it.quantity}x ${it.product.name}" }
+                val itemsSummary = order.items.joinToString(", ") {
+                    "${it.quantity.toBigDecimal().stripTrailingZeros().toPlainString()}x ${it.product.name}"
+                }
                 Text(
                     text = itemsSummary,
                     style = MaterialTheme.typography.bodyMedium,
@@ -126,7 +142,6 @@ fun OrderHistoryItem(order: OrderDto, onClick: () -> Unit) {
 fun formatDate(dateString: String?): String {
     if (dateString.isNullOrEmpty()) return "Unknown Date"
     return try {
-        // Backend returns ISO string: 2026-08-18T06:05:47.411Z
         val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
         val date = parser.parse(dateString)
         val formatter = SimpleDateFormat("MMM dd, yyyy", Locale.US)
