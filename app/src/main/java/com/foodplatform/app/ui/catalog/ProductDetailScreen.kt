@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.SetMeal
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,21 +19,47 @@ import com.foodplatform.app.data.remote.ProductType
 fun ProductDetailScreen(
     productId: String,
     viewModel: ProductDetailViewModel,
-    onNavigateBack: () -> Unit
+    cartItemCount: Int,
+    onNavigateBack: () -> Unit,
+    onNavigateToCart: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val isAdding by viewModel.isAddingToCart.collectAsState()
+    val addToCartEvent by viewModel.addToCartEvent.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(addToCartEvent) {
+        addToCartEvent?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearAddToCartEvent()
+        }
+    }
 
     LaunchedEffect(productId) {
         viewModel.loadProduct(productId)
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Product Details") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToCart) {
+                        BadgedBox(
+                            badge = {
+                                if (cartItemCount > 0) {
+                                    Badge { Text(cartItemCount.toString()) }
+                                }
+                            }
+                        ) {
+                            Icon(imageVector = Icons.Default.ShoppingCart, contentDescription = "Cart")
+                        }
                     }
                 }
             )
@@ -109,11 +136,19 @@ fun ProductDetailScreen(
                         Spacer(modifier = Modifier.weight(1f))
 
                         Button(
-                            onClick = { /* TODO: Implement Add to Cart */ },
+                            onClick = { viewModel.addToCart(product.id, 1) },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
-                            enabled = product.isAvailable
+                            enabled = product.isAvailable && !isAdding
                         ) {
-                            Text("Add to Cart")
+                            if (isAdding) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Text("Add to Cart")
+                            }
                         }
                     }
                 }

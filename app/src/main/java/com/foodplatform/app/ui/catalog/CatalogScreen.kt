@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Dining
 import androidx.compose.material.icons.filled.PestControlRodent
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.SetMeal
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,7 +25,9 @@ import com.foodplatform.app.data.remote.ProductType
 @Composable
 fun CatalogScreen(
     viewModel: CatalogViewModel,
+    cartItemCount: Int,
     onNavigateToProduct: (String) -> Unit,
+    onNavigateToCart: () -> Unit,
     onLogout: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -35,6 +38,17 @@ fun CatalogScreen(
             TopAppBar(
                 title = { Text("FoodPlatform Catalog") },
                 actions = {
+                    IconButton(onClick = onNavigateToCart) {
+                        BadgedBox(
+                            badge = {
+                                if (cartItemCount > 0) {
+                                    Badge { Text(cartItemCount.toString()) }
+                                }
+                            }
+                        ) {
+                            Icon(imageVector = androidx.compose.material.icons.Icons.Default.ShoppingCart, contentDescription = "Cart")
+                        }
+                    }
                     TextButton(onClick = onLogout) {
                         Text("Logout", color = MaterialTheme.colorScheme.error)
                     }

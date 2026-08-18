@@ -13,12 +13,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.navigation
 import com.foodplatform.app.data.repository.SessionManager
 import com.foodplatform.app.data.repository.SessionState
 import com.foodplatform.app.ui.auth.AuthViewModel
@@ -57,47 +59,94 @@ fun AppNavigation(authViewModel: AuthViewModel) {
             }
         }
         SessionState.AUTHENTICATED -> {
-            NavHost(navController = navController, startDestination = "catalog") {
-                composable("catalog") {
-                    val productRepository = com.foodplatform.app.data.repository.ProductRepository(
-                        com.foodplatform.app.data.remote.NetworkModule.provideProductApi(
-                            com.foodplatform.app.data.remote.NetworkModule.provideRetrofit(
-                                com.foodplatform.app.data.local.SecureTokenStorageImpl(androidx.compose.ui.platform.LocalContext.current),
-                                onUnauthorized = { SessionManager.setUnauthenticated() }
-                            )
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val retrofit = remember {
+                com.foodplatform.app.data.remote.NetworkModule.provideRetrofit(
+                    com.foodplatform.app.data.local.SecureTokenStorageImpl(context),
+                    onUnauthorized = { SessionManager.setUnauthenticated() }
+                )
+            }
+
+            val productRepository = remember {
+                com.foodplatform.app.data.repository.ProductRepository(
+                    com.foodplatform.app.data.remote.NetworkModule.provideProductApi(retrofit)
+                )
+            }
+
+            val cartRepository = remember {
+                com.foodplatform.app.data.repository.CartRepository(
+                    com.foodplatform.app.data.remote.NetworkModule.provideCartApi(retrofit)
+                )
+            }
+
+            NavHost(navController = navController, startDestination = "auth_flow") {
+                navigation(startDestination = "catalog", route = "auth_flow") {
+                    composable("catalog") { backStackEntry ->
+                        val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("auth_flow") }
+                        val cartViewModel: com.foodplatform.app.ui.cart.CartViewModel = viewModel(
+                            parentEntry,
+                            factory = com.foodplatform.app.ui.cart.CartViewModelFactory(cartRepository)
                         )
-                    )
-                    val catalogViewModel: com.foodplatform.app.ui.catalog.CatalogViewModel = viewModel(
-                        factory = com.foodplatform.app.ui.catalog.CatalogViewModelFactory(productRepository)
-                    )
 
-                    com.foodplatform.app.ui.catalog.CatalogScreen(
-                        viewModel = catalogViewModel,
-                        onNavigateToProduct = { productId -> navController.navigate("product_detail/$productId") },
-                        onLogout = { authViewModel.logout() }
-                    )
-                }
+                        val cartUiState by cartViewModel.uiState.collectAsState()
+                        val cartItemCount = if (cartUiState is com.foodplatform.app.ui.cart.CartUiState.Success) {
+                            (cartUiState as com.foodplatform.app.ui.cart.CartUiState.Success).cart.items.sumOf { it.quantity.toInt() }
+                        } else 0
 
-                composable("product_detail/{productId}") { backStackEntry ->
-                    val productId = backStackEntry.arguments?.getString("productId") ?: return@composable
-
-                    val productRepository = com.foodplatform.app.data.repository.ProductRepository(
-                        com.foodplatform.app.data.remote.NetworkModule.provideProductApi(
-                            com.foodplatform.app.data.remote.NetworkModule.provideRetrofit(
-                                com.foodplatform.app.data.local.SecureTokenStorageImpl(androidx.compose.ui.platform.LocalContext.current),
-                                onUnauthorized = { SessionManager.setUnauthenticated() }
-                            )
+                        val catalogViewModel: com.foodplatform.app.ui.catalog.CatalogViewModel = viewModel(
+                            factory = com.foodplatform.app.ui.catalog.CatalogViewModelFactory(productRepository)
                         )
-                    )
-                    val detailViewModel: com.foodplatform.app.ui.catalog.ProductDetailViewModel = viewModel(
-                        factory = com.foodplatform.app.ui.catalog.ProductDetailViewModelFactory(productRepository)
-                    )
 
-                    com.foodplatform.app.ui.catalog.ProductDetailScreen(
-                        productId = productId,
-                        viewModel = detailViewModel,
-                        onNavigateBack = { navController.popBackStack() }
-                    )
+                        com.foodplatform.app.ui.catalog.CatalogScreen(
+                            viewModel = catalogViewModel,
+                            cartItemCount = cartItemCount,
+                            onNavigateToProduct = { productId -> navController.navigate("product_detail/$productId") },
+                            onNavigateToCart = { navController.navigate("cart") },
+                            onLogout = { authViewModel.logout() }
+                        )
+                    }
+
+                    composable("product_detail/{productId}") { backStackEntry ->
+                        val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("auth_flow") }
+                        val cartViewModel: com.foodplatform.app.ui.cart.CartViewModel = viewModel(
+                            parentEntry,
+                            factory = com.foodplatform.app.ui.cart.CartViewModelFactory(cartRepository)
+                        )
+
+                        val cartUiState by cartViewModel.uiState.collectAsState()
+                        val cartItemCount = if (cartUiState is com.foodplatform.app.ui.cart.CartUiState.Success) {
+                            (cartUiState as com.foodplatform.app.ui.cart.CartUiState.Success).cart.items.sumOf { it.quantity.toInt() }
+                        } else 0
+
+                        val productId = backStackEntry.arguments?.getString("productId") ?: return@composable
+
+                        val detailViewModel: com.foodplatform.app.ui.catalog.ProductDetailViewModel = viewModel(
+                            factory = com.foodplatform.app.ui.catalog.ProductDetailViewModelFactory(productRepository, cartRepository)
+                        )
+
+                        com.foodplatform.app.ui.catalog.ProductDetailScreen(
+                            productId = productId,
+                            viewModel = detailViewModel,
+                            cartItemCount = cartItemCount,
+                            onNavigateBack = { navController.popBackStack() },
+                            onNavigateToCart = { navController.navigate("cart") }
+                        )
+                    }
+
+                    composable("cart") { backStackEntry ->
+                        val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("auth_flow") }
+                        val cartViewModel: com.foodplatform.app.ui.cart.CartViewModel = viewModel(
+                            parentEntry,
+                            factory = com.foodplatform.app.ui.cart.CartViewModelFactory(cartRepository)
+                        )
+                        val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+
+                        com.foodplatform.app.ui.cart.CartScreen(
+                            viewModel = cartViewModel,
+                            onNavigateBack = { navController.popBackStack() },
+                            snackbarHostState = snackbarHostState
+                        )
+                    }
                 }
             }
         }
