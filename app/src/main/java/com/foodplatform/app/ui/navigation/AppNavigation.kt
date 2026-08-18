@@ -73,6 +73,18 @@ fun AppNavigation(authViewModel: AuthViewModel) {
                 )
             }
 
+            val categoryRepository = remember {
+                com.foodplatform.app.data.repository.CategoryRepository(
+                    com.foodplatform.app.data.remote.NetworkModule.provideCategoryApi(retrofit)
+                )
+            }
+
+            val reviewRepository = remember {
+                com.foodplatform.app.data.repository.ReviewRepository(
+                    com.foodplatform.app.data.remote.NetworkModule.provideReviewApi(retrofit)
+                )
+            }
+
             val cartRepository = remember {
                 com.foodplatform.app.data.repository.CartRepository(
                     com.foodplatform.app.data.remote.NetworkModule.provideCartApi(retrofit)
@@ -113,7 +125,7 @@ fun AppNavigation(authViewModel: AuthViewModel) {
                         } else 0
 
                         val catalogViewModel: com.foodplatform.app.ui.catalog.CatalogViewModel = viewModel(
-                            factory = com.foodplatform.app.ui.catalog.CatalogViewModelFactory(productRepository)
+                            factory = com.foodplatform.app.ui.catalog.CatalogViewModelFactory(productRepository, categoryRepository)
                         )
 
                         com.foodplatform.app.ui.catalog.CatalogScreen(
@@ -141,7 +153,7 @@ fun AppNavigation(authViewModel: AuthViewModel) {
                         val productId = backStackEntry.arguments?.getString("productId") ?: return@composable
 
                         val detailViewModel: com.foodplatform.app.ui.catalog.ProductDetailViewModel = viewModel(
-                            factory = com.foodplatform.app.ui.catalog.ProductDetailViewModelFactory(productRepository, cartRepository)
+                            factory = com.foodplatform.app.ui.catalog.ProductDetailViewModelFactory(productRepository, cartRepository, reviewRepository)
                         )
 
                         com.foodplatform.app.ui.catalog.ProductDetailScreen(
@@ -219,7 +231,7 @@ fun AppNavigation(authViewModel: AuthViewModel) {
                         val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("auth_flow") }
                         val ordersViewModel: com.foodplatform.app.ui.orders.OrdersViewModel = viewModel(
                             parentEntry,
-                            factory = com.foodplatform.app.ui.orders.OrdersViewModelFactory(orderRepository)
+                            factory = com.foodplatform.app.ui.orders.OrdersViewModelFactory(orderRepository, reviewRepository)
                         )
                         com.foodplatform.app.ui.orders.OrderHistoryScreen(
                             viewModel = ordersViewModel,
@@ -232,7 +244,7 @@ fun AppNavigation(authViewModel: AuthViewModel) {
                         val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("auth_flow") }
                         val ordersViewModel: com.foodplatform.app.ui.orders.OrdersViewModel = viewModel(
                             parentEntry,
-                            factory = com.foodplatform.app.ui.orders.OrdersViewModelFactory(orderRepository)
+                            factory = com.foodplatform.app.ui.orders.OrdersViewModelFactory(orderRepository, reviewRepository)
                         )
                         val orderId = backStackEntry.arguments?.getString("orderId") ?: return@composable
                         com.foodplatform.app.ui.orders.OrderDetailsScreen(

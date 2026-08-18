@@ -18,7 +18,8 @@ data class OrderItemDto(
     val id: String,
     val quantity: String,
     val purchasePrice: String,
-    val product: ProductDto
+    val product: ProductDto,
+    val review: ReviewDto? = null
 )
 
 data class OrderAddressSnapshotDto(

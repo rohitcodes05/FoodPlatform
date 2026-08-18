@@ -5,7 +5,11 @@ import com.foodplatform.app.data.remote.PaginationMeta
 import com.foodplatform.app.data.remote.ProductApi
 import com.foodplatform.app.data.remote.ProductDto
 import com.foodplatform.app.data.remote.ProductType
+import com.foodplatform.app.data.remote.CategoryApi
+import com.foodplatform.app.data.remote.CategoryDto
+import com.foodplatform.app.data.repository.CategoryRepository
 import com.foodplatform.app.data.repository.ProductRepository
+import retrofit2.Response
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.*
@@ -20,6 +24,7 @@ class CatalogViewModelTest {
 
     private lateinit var fakeApi: FakeProductApi
     private lateinit var repository: ProductRepository
+    private lateinit var categoryRepository: CategoryRepository
     private lateinit var viewModel: CatalogViewModel
     private val testDispatcher = StandardTestDispatcher()
 
@@ -36,11 +41,21 @@ class CatalogViewModelTest {
         }
     }
 
+    class FakeCategoryApi : CategoryApi {
+        override suspend fun getCategories(): Response<List<CategoryDto>> = Response.success(emptyList())
+    }
+
+    class FakeCategoryRepository : CategoryRepository(FakeCategoryApi()) {
+        var mockCategoriesResult: Result<List<CategoryDto>> = Result.success(emptyList())
+        override suspend fun getCategories(): Result<List<CategoryDto>> = mockCategoriesResult
+    }
+
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         fakeApi = FakeProductApi()
         repository = ProductRepository(fakeApi)
+        categoryRepository = FakeCategoryRepository()
     }
 
     @After
@@ -55,7 +70,7 @@ class CatalogViewModelTest {
         )
         fakeApi.page1Response = PaginatedResponse(dummyProducts, PaginationMeta(1, 1, 20, 1))
 
-        viewModel = CatalogViewModel(repository)
+        viewModel = CatalogViewModel(repository, categoryRepository)
         
         // Wait for coroutines to complete
         advanceUntilIdle()
@@ -75,7 +90,7 @@ class CatalogViewModelTest {
         fakeApi.page1Response = PaginatedResponse(page1, PaginationMeta(2, 1, 1, 2))
         fakeApi.page2Response = PaginatedResponse(page2, PaginationMeta(2, 2, 1, 2))
 
-        viewModel = CatalogViewModel(repository)
+        viewModel = CatalogViewModel(repository, categoryRepository)
         advanceUntilIdle()
         
         // Trigger next page

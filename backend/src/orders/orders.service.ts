@@ -114,7 +114,7 @@ export class OrdersService {
     return this.prisma.order.findMany({
       where: { userId },
       include: {
-        items: { include: { product: true } },
+        items: { include: { product: true, review: true } },
         address: true,
         payment: true,
         delivery: true,
@@ -127,7 +127,7 @@ export class OrdersService {
     const order = await this.prisma.order.findUnique({
       where: { id },
       include: {
-        items: { include: { product: true } },
+        items: { include: { product: true, review: true } },
         address: true,
         payment: true,
         delivery: true,

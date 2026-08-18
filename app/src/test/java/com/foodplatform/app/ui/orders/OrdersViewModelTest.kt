@@ -3,7 +3,12 @@ package com.foodplatform.app.ui.orders
 import com.foodplatform.app.data.remote.OrderApi
 import com.foodplatform.app.data.remote.CreateOrderRequest
 import com.foodplatform.app.data.remote.OrderDto
+import com.foodplatform.app.data.remote.ReviewApi
+import com.foodplatform.app.data.remote.ReviewDto
+import com.foodplatform.app.data.remote.CreateReviewRequest
+import com.foodplatform.app.data.remote.UpdateReviewRequest
 import com.foodplatform.app.data.repository.OrderRepository
+import com.foodplatform.app.data.repository.ReviewRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -24,6 +29,7 @@ class OrdersViewModelTest {
 
     private lateinit var viewModel: OrdersViewModel
     private lateinit var orderRepository: FakeOrderRepository
+    private lateinit var reviewRepository: ReviewRepository
 
     class FakeOrderApi : OrderApi {
         override suspend fun createOrder(request: CreateOrderRequest): Response<OrderDto> = Response.success(OrderDto("1", "user", "1", "PENDING", "2026-08-18T10:00:00Z"))
@@ -39,11 +45,19 @@ class OrdersViewModelTest {
         override suspend fun getOrderById(id: String): Result<OrderDto> = mockOrderByIdResult
     }
 
+    class FakeReviewApi : ReviewApi {
+        override suspend fun getReviewsByProduct(productId: String): Response<List<ReviewDto>> = Response.success(emptyList())
+        override suspend fun createReview(request: CreateReviewRequest): Response<Unit> = Response.success(Unit)
+        override suspend fun updateReview(id: String, request: UpdateReviewRequest): Response<Unit> = Response.success(Unit)
+        override suspend fun deleteReview(id: String): Response<Unit> = Response.success(Unit)
+    }
+
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         orderRepository = FakeOrderRepository()
-        viewModel = OrdersViewModel(orderRepository)
+        reviewRepository = ReviewRepository(FakeReviewApi())
+        viewModel = OrdersViewModel(orderRepository, reviewRepository)
     }
 
     @After

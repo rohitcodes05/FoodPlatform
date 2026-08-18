@@ -3,13 +3,15 @@ package com.foodplatform.app.ui.orders
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.foodplatform.app.data.repository.OrderRepository
+import com.foodplatform.app.data.repository.ReviewRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class OrdersViewModel(
-    private val orderRepository: OrderRepository
+    private val orderRepository: OrderRepository,
+    private val reviewRepository: ReviewRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<OrdersUiState>(OrdersUiState.Loading)
@@ -17,6 +19,43 @@ class OrdersViewModel(
 
     private val _detailsUiState = MutableStateFlow<OrderDetailsUiState>(OrderDetailsUiState.Loading)
     val detailsUiState: StateFlow<OrderDetailsUiState> = _detailsUiState.asStateFlow()
+
+    private val _reviewSubmitState = MutableStateFlow<Result<Unit>?>(null)
+    val reviewSubmitState: StateFlow<Result<Unit>?> = _reviewSubmitState.asStateFlow()
+
+    fun clearReviewState() {
+        _reviewSubmitState.value = null
+    }
+
+    fun submitReview(orderItemId: String, rating: Int, comment: String?, orderId: String) {
+        viewModelScope.launch {
+            val result = reviewRepository.createReview(orderItemId, rating, comment)
+            _reviewSubmitState.value = result
+            if (result.isSuccess) {
+                loadOrderDetails(orderId)
+            }
+        }
+    }
+
+    fun updateReview(reviewId: String, rating: Int, comment: String?, orderId: String) {
+        viewModelScope.launch {
+            val result = reviewRepository.updateReview(reviewId, rating, comment)
+            _reviewSubmitState.value = result
+            if (result.isSuccess) {
+                loadOrderDetails(orderId)
+            }
+        }
+    }
+
+    fun deleteReview(reviewId: String, orderId: String) {
+        viewModelScope.launch {
+            val result = reviewRepository.deleteReview(reviewId)
+            _reviewSubmitState.value = result
+            if (result.isSuccess) {
+                loadOrderDetails(orderId)
+            }
+        }
+    }
 
     fun loadOrders() {
         _uiState.value = OrdersUiState.Loading
@@ -49,11 +88,14 @@ class OrdersViewModel(
     }
 }
 
-class OrdersViewModelFactory(private val orderRepository: OrderRepository) : androidx.lifecycle.ViewModelProvider.Factory {
+class OrdersViewModelFactory(
+    private val orderRepository: OrderRepository,
+    private val reviewRepository: ReviewRepository
+) : androidx.lifecycle.ViewModelProvider.Factory {
     override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(OrdersViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return OrdersViewModel(orderRepository) as T
+            return OrdersViewModel(orderRepository, reviewRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

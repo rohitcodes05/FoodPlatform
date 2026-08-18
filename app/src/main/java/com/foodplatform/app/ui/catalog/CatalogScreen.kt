@@ -3,6 +3,7 @@ package com.foodplatform.app.ui.catalog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -83,12 +84,39 @@ fun CatalogScreen(
                     }
                 }
                 is CatalogUiState.Success -> {
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        if (state.categories.isNotEmpty()) {
+                            LazyRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                item {
+                                    FilterChip(
+                                        selected = state.selectedCategoryId == null,
+                                        onClick = { viewModel.selectCategory(null) },
+                                        label = { Text("All") }
+                                    )
+                                }
+                                items(state.categories) { category ->
+                                    FilterChip(
+                                        selected = state.selectedCategoryId == category.id,
+                                        onClick = { viewModel.selectCategory(category.id) },
+                                        label = { Text(category.name) }
+                                    )
+                                }
+                            }
+                        }
+
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
                         items(state.products) { product ->
                             ProductItem(product = product, onClick = { onNavigateToProduct(product.id) })
                         }
@@ -104,6 +132,7 @@ fun CatalogScreen(
                                     CircularProgressIndicator()
                                 }
                             }
+                        }
                         }
                     }
 
