@@ -31,8 +31,10 @@ class CatalogViewModelTest {
     class FakeProductApi : ProductApi {
         var page1Response: PaginatedResponse<ProductDto>? = null
         var page2Response: PaginatedResponse<ProductDto>? = null
+        var lastSearchQuery: String? = null
 
         override suspend fun getProducts(page: Int?, limit: Int?, categoryId: String?, type: String?, search: String?): PaginatedResponse<ProductDto> {
+            lastSearchQuery = search
             return if (page == 1) page1Response!! else page2Response!!
         }
 
@@ -102,5 +104,30 @@ class CatalogViewModelTest {
         val successState = state as CatalogUiState.Success
         assertEquals(2, successState.products.size)
         assertTrue(successState.isEndReached)
+    }
+
+    @Test
+    fun `updateSearchQuery resets page and passes search query to api`() = runTest(testDispatcher) {
+        val initialProducts = listOf(ProductDto("1", "Burger", "Tasty", ProductType.COOKED_FOOD, 5.99, true))
+        val searchResult = listOf(ProductDto("2", "Pizza Margherita", "Delicious", ProductType.COOKED_FOOD, 10.99, true))
+
+        fakeApi.page1Response = PaginatedResponse(initialProducts, PaginationMeta(1, 1, 20, 1))
+
+        viewModel = CatalogViewModel(repository, categoryRepository)
+        advanceUntilIdle()
+
+        assertEquals(null, fakeApi.lastSearchQuery)
+
+        fakeApi.page1Response = PaginatedResponse(searchResult, PaginationMeta(1, 1, 20, 1))
+        viewModel.updateSearchQuery("Pizza")
+        advanceUntilIdle()
+
+        assertEquals("Pizza", fakeApi.lastSearchQuery)
+        val state = viewModel.uiState.value
+        assertTrue(state is CatalogUiState.Success)
+        val successState = state as CatalogUiState.Success
+        assertEquals(1, successState.products.size)
+        assertEquals("Pizza Margherita", successState.products[0].name)
+        assertEquals("Pizza", successState.searchQuery)
     }
 }

@@ -19,6 +19,7 @@ sealed class CatalogUiState {
         val products: List<ProductDto>,
         val categories: List<CategoryDto> = emptyList(),
         val selectedCategoryId: String? = null,
+        val searchQuery: String = "",
         val isNextPageLoading: Boolean = false,
         val isEndReached: Boolean = false
     ) : CatalogUiState()
@@ -32,6 +33,9 @@ class CatalogViewModel(
 
     private val _uiState = MutableStateFlow<CatalogUiState>(CatalogUiState.Loading)
     val uiState: StateFlow<CatalogUiState> = _uiState.asStateFlow()
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     private var currentPage = 1
     private var isFetching = false
@@ -67,6 +71,15 @@ class CatalogViewModel(
         loadNextPage()
     }
 
+    fun updateSearchQuery(query: String) {
+        if (_searchQuery.value == query) return
+        _searchQuery.value = query
+        currentPage = 1
+        isFetching = false
+        _uiState.value = CatalogUiState.Loading
+        loadNextPage()
+    }
+
     fun loadNextPage() {
         if (isFetching) return
 
@@ -81,6 +94,7 @@ class CatalogViewModel(
                 products = currentProducts,
                 categories = categories,
                 selectedCategoryId = selectedCategoryId,
+                searchQuery = _searchQuery.value,
                 isNextPageLoading = true, 
                 isEndReached = false
             )
@@ -92,7 +106,8 @@ class CatalogViewModel(
         }
 
         viewModelScope.launch {
-            when (val result = productRepository.getProducts(page = currentPage, categoryId = selectedCategoryId)) {
+            val query = _searchQuery.value.takeIf { it.isNotBlank() }
+            when (val result = productRepository.getProducts(page = currentPage, categoryId = selectedCategoryId, search = query)) {
                 is Resource.Success -> {
                     val newProducts = result.data.items
                     val isEndReached = currentPage >= result.data.meta.totalPages
@@ -101,6 +116,7 @@ class CatalogViewModel(
                         products = currentProducts + newProducts,
                         categories = categories,
                         selectedCategoryId = selectedCategoryId,
+                        searchQuery = _searchQuery.value,
                         isNextPageLoading = false,
                         isEndReached = isEndReached
                     )
@@ -118,6 +134,7 @@ class CatalogViewModel(
                             products = currentProducts,
                             categories = categories,
                             selectedCategoryId = selectedCategoryId,
+                            searchQuery = _searchQuery.value,
                             isNextPageLoading = false,
                             isEndReached = false
                         )

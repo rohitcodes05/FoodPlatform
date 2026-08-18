@@ -2,9 +2,10 @@ package com.foodplatform.app.ui.profile
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,6 +19,7 @@ import androidx.compose.ui.unit.dp
 fun ProfileScreen(
     viewModel: ProfileViewModel,
     onNavigateToOrderHistory: () -> Unit,
+    onNavigateToAddresses: () -> Unit,
     onNavigateToLogin: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
@@ -92,6 +94,17 @@ fun ProfileScreen(
                             Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Order History")
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Order History")
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Button(
+                            onClick = onNavigateToAddresses,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.LocationOn, contentDescription = "My Addresses")
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("My Addresses")
                         }
 
                         Spacer(modifier = Modifier.weight(1f))

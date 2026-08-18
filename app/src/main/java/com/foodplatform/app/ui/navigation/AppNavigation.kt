@@ -220,9 +220,20 @@ fun AppNavigation(authViewModel: AuthViewModel) {
                         com.foodplatform.app.ui.profile.ProfileScreen(
                             viewModel = profileViewModel,
                             onNavigateToOrderHistory = { navController.navigate("order_history") },
+                            onNavigateToAddresses = { navController.navigate("addresses") },
                             onNavigateToLogin = {
                                 SessionManager.setUnauthenticated()
                             },
+                            onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
+
+                    composable("addresses") {
+                        val addressesViewModel: com.foodplatform.app.ui.addresses.AddressesViewModel = viewModel(
+                            factory = com.foodplatform.app.ui.addresses.AddressesViewModelFactory(addressRepository)
+                        )
+                        com.foodplatform.app.ui.addresses.AddressesScreen(
+                            viewModel = addressesViewModel,
                             onNavigateBack = { navController.popBackStack() }
                         )
                     }
