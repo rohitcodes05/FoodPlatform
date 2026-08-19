@@ -31,6 +31,11 @@ fun ProductDetailScreen(
     val addToCartEvent by viewModel.addToCartEvent.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    var selectedCutId by remember { mutableStateOf<String?>(null) }
+    var selectedWeightId by remember { mutableStateOf<String?>(null) }
+    var expandedCut by remember { mutableStateOf(false) }
+    var expandedWeight by remember { mutableStateOf(false) }
+
     LaunchedEffect(addToCartEvent) {
         addToCartEvent?.let { message ->
             snackbarHostState.showSnackbar(message)
@@ -91,6 +96,14 @@ fun ProductDetailScreen(
                 }
                 is ProductDetailUiState.Success -> {
                     val product = state.product
+                    val currentWeight = product.weightOptions.find { it.id == selectedWeightId }
+                    val currentCut = product.cutOptions.find { it.id == selectedCutId }
+                    val displayPrice = currentWeight?.priceOverride ?: product.price
+
+                    val needsCut = product.type == ProductType.RAW_MEAT && product.cutOptions.isNotEmpty()
+                    val needsWeight = product.type == ProductType.RAW_MEAT && product.weightOptions.isNotEmpty()
+                    val canAdd = product.isAvailable && !isAdding && (!needsCut || selectedCutId != null) && (!needsWeight || selectedWeightId != null)
+
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
@@ -105,19 +118,19 @@ fun ProductDetailScreen(
                                 modifier = Modifier.size(120.dp),
                                 tint = MaterialTheme.colorScheme.primary
                             )
-                            
+
                             Spacer(modifier = Modifier.height(24.dp))
-                            
+
                             Text(
                                 text = product.name,
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold
                             )
-                            
+
                             Spacer(modifier = Modifier.height(8.dp))
-                            
+
                             Text(
-                                text = "$${product.price}",
+                                text = "{displayPrice}",
                                 style = MaterialTheme.typography.titleLarge,
                                 color = MaterialTheme.colorScheme.secondary
                             )
@@ -139,12 +152,74 @@ fun ProductDetailScreen(
                                 Spacer(modifier = Modifier.height(24.dp))
                             }
 
+                            if (needsCut) {
+                                ExposedDropdownMenuBox(
+                                    expanded = expandedCut,
+                                    onExpandedChange = { expandedCut = !expandedCut },
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = currentCut?.name ?: "Select Cut",
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCut) },
+                                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                                    )
+                                    ExposedDropdownMenu(
+                                        expanded = expandedCut,
+                                        onDismissRequest = { expandedCut = false }
+                                    ) {
+                                        product.cutOptions.forEach { cut ->
+                                            DropdownMenuItem(
+                                                text = { Text(cut.name) },
+                                                onClick = {
+                                                    selectedCutId = cut.id
+                                                    expandedCut = false
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (needsWeight) {
+                                ExposedDropdownMenuBox(
+                                    expanded = expandedWeight,
+                                    onExpandedChange = { expandedWeight = !expandedWeight },
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = currentWeight?.weightLabel ?: "Select Weight",
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedWeight) },
+                                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                                    )
+                                    ExposedDropdownMenu(
+                                        expanded = expandedWeight,
+                                        onDismissRequest = { expandedWeight = false }
+                                    ) {
+                                        product.weightOptions.forEach { weight ->
+                                            DropdownMenuItem(
+                                                text = { Text(weight.weightLabel) },
+                                                onClick = {
+                                                    selectedWeightId = weight.id
+                                                    expandedWeight = false
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
                             Button(
-                                onClick = { viewModel.addToCart(product.id, 1) },
+                                onClick = { viewModel.addToCart(product.id, 1, selectedCutId, selectedWeightId) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(56.dp),
-                                enabled = product.isAvailable && !isAdding
+                                enabled = canAdd
                             ) {
                                 if (isAdding) {
                                     CircularProgressIndicator(
@@ -156,9 +231,9 @@ fun ProductDetailScreen(
                                     Text("Add to Cart")
                                 }
                             }
-                            
+
                             Spacer(modifier = Modifier.height(32.dp))
-                            
+
                             Text(
                                 text = "Reviews",
                                 style = MaterialTheme.typography.titleLarge,
@@ -167,7 +242,7 @@ fun ProductDetailScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            // Average rating summary (computed client-side from fetched reviews)
+                            // Average rating summary
                             if (state.reviews.isNotEmpty()) {
                                 val avg = state.reviews.map { it.rating }.average()
                                 val count = state.reviews.size
@@ -189,7 +264,7 @@ fun ProductDetailScreen(
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = "($count ${if (count == 1) "review" else "reviews"})",
+                                        text = "( )",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -220,32 +295,12 @@ fun ProductDetailScreen(
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Text(
-                                            text = review.user?.name ?: "Anonymous",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                imageVector = Icons.Default.Star,
-                                                contentDescription = "Rating",
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(
-                                                text = review.rating.toString(),
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
+                                        Text(text = "Rating: /5", fontWeight = FontWeight.Bold)
+                                        Text(text = review.createdAt.take(10), style = MaterialTheme.typography.bodySmall)
                                     }
                                     if (!review.comment.isNullOrBlank()) {
                                         Spacer(modifier = Modifier.height(8.dp))
-                                        Text(
-                                            text = review.comment,
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
+                                        Text(text = review.comment)
                                     }
                                 }
                             }

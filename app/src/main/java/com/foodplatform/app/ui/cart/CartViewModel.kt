@@ -57,12 +57,12 @@ class CartViewModel(
         }
     }
 
-    fun updateQuantity(productId: String, quantity: Int) {
+    fun updateQuantity(itemId: String, quantity: Int) {
         if (_isActionLoading.value) return
         _isActionLoading.value = true
 
         viewModelScope.launch {
-            when (val result = repository.updateItemQuantity(productId, quantity)) {
+            when (val result = repository.updateItemQuantity(itemId, quantity)) {
                 is Resource.Success -> {
                     _isActionLoading.value = false
                 }
@@ -74,12 +74,12 @@ class CartViewModel(
         }
     }
 
-    fun removeItem(productId: String) {
+    fun removeItem(itemId: String) {
         if (_isActionLoading.value) return
         _isActionLoading.value = true
 
         viewModelScope.launch {
-            when (val result = repository.removeItem(productId)) {
+            when (val result = repository.removeItem(itemId)) {
                 is Resource.Success -> {
                     _isActionLoading.value = false
                 }
@@ -115,7 +115,10 @@ class CartViewModel(
     }
 
     fun calculateTotal(cart: CartDto): Double {
-        return cart.items.sumOf { it.quantity * it.product.price }
+        return cart.items.sumOf { item ->
+            val price = item.weightOption?.priceOverride ?: item.product.price
+            item.quantity * price
+        }
     }
 }
 

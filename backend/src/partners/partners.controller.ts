@@ -1,3 +1,4 @@
+import { CreateCutOptionDto, UpdateCutOptionDto, CreateWeightOptionDto, UpdateWeightOptionDto } from './dto/variation-options.dto';
 import { Controller, Post, Get, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { PartnersService } from './partners.service';
 import { CreatePartnerDto } from './dto/create-partner.dto';
@@ -71,7 +72,73 @@ export class PartnersController {
 
   @Delete('products/:id')
   @Roles(Role.VENDOR)
-  deletePartnerProduct(@CurrentUser() user: User, @Param('id') productId: string) {
-    return this.partnersService.deletePartnerProduct(user.id, productId);
+  deletePartnerProduct(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.partnersService.deletePartnerProduct(user.id, id);
+  }
+
+  // ── Raw Seller Variation Management (Cuts) ──────────────────────────────────
+
+  @Post('products/:id/cuts')
+  @Roles(Role.VENDOR)
+  createCutOption(
+    @CurrentUser() user: User,
+    @Param('id') productId: string,
+    @Body() dto: CreateCutOptionDto,
+  ) {
+    return this.partnersService.createCutOption(user.id, productId, dto.name, dto.isAvailable);
+  }
+
+  @Patch('products/:id/cuts/:cutId')
+  @Roles(Role.VENDOR)
+  updateCutOption(
+    @CurrentUser() user: User,
+    @Param('id') productId: string,
+    @Param('cutId') cutId: string,
+    @Body() dto: UpdateCutOptionDto,
+  ) {
+    return this.partnersService.updateCutOption(user.id, productId, cutId, dto.name, dto.isAvailable);
+  }
+
+  @Delete('products/:id/cuts/:cutId')
+  @Roles(Role.VENDOR)
+  deleteCutOption(
+    @CurrentUser() user: User,
+    @Param('id') productId: string,
+    @Param('cutId') cutId: string,
+  ) {
+    return this.partnersService.deleteCutOption(user.id, productId, cutId);
+  }
+
+  // ── Raw Seller Variation Management (Weights) ───────────────────────────────
+
+  @Post('products/:id/weights')
+  @Roles(Role.VENDOR)
+  createWeightOption(
+    @CurrentUser() user: User,
+    @Param('id') productId: string,
+    @Body() dto: CreateWeightOptionDto,
+  ) {
+    return this.partnersService.createWeightOption(user.id, productId, dto.weightLabel, dto.priceOverride, dto.isAvailable);
+  }
+
+  @Patch('products/:id/weights/:weightId')
+  @Roles(Role.VENDOR)
+  updateWeightOption(
+    @CurrentUser() user: User,
+    @Param('id') productId: string,
+    @Param('weightId') weightId: string,
+    @Body() dto: UpdateWeightOptionDto,
+  ) {
+    return this.partnersService.updateWeightOption(user.id, productId, weightId, dto.weightLabel, dto.priceOverride, dto.isAvailable);
+  }
+
+  @Delete('products/:id/weights/:weightId')
+  @Roles(Role.VENDOR)
+  deleteWeightOption(
+    @CurrentUser() user: User,
+    @Param('id') productId: string,
+    @Param('weightId') weightId: string,
+  ) {
+    return this.partnersService.deleteWeightOption(user.id, productId, weightId);
   }
 }

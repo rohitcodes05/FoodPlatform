@@ -14,14 +14,14 @@ interface CartApi {
     @POST("cart/items")
     suspend fun addItem(@Body request: AddCartItemRequest): CartItemDto
 
-    @PATCH("cart/items/{productId}")
+    @PATCH("cart/items/{itemId}")
     suspend fun updateItemQuantity(
-        @Path("productId") productId: String,
+        @Path("itemId") itemId: String,
         @Body request: UpdateCartItemRequest
     ): CartItemDto
 
-    @DELETE("cart/items/{productId}")
-    suspend fun removeItem(@Path("productId") productId: String)
+    @DELETE("cart/items/{itemId}")
+    suspend fun removeItem(@Path("itemId") itemId: String)
 
     @DELETE("cart")
     suspend fun clearCart()

@@ -28,12 +28,12 @@ class CartRepositoryTest {
 
         override suspend fun addItem(request: AddCartItemRequest): CartItemDto {
             if (shouldThrow) throw RuntimeException("Error")
-            return CartItemDto("item1", "cart1", request.productId, request.quantity.toDouble(), mockProduct())
+            return CartItemDto("item1", "cart1", request.productId, null, null, request.quantity.toDouble(), mockProduct(), null, null)
         }
 
         override suspend fun updateItemQuantity(productId: String, request: UpdateCartItemRequest): CartItemDto {
             if (shouldThrow) throw RuntimeException("Error")
-            return CartItemDto("item1", "cart1", productId, request.quantity.toDouble(), mockProduct())
+            return CartItemDto("item1", "cart1", productId, null, null, request.quantity.toDouble(), mockProduct(), null, null)
         }
 
         override suspend fun removeItem(productId: String) {

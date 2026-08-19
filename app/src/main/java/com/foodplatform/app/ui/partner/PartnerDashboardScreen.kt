@@ -85,6 +85,7 @@ fun PartnerDashboardScreen(
     var showCreateProductDialog by remember { mutableStateOf(false) }
     var orderToUpdateStatus by remember { mutableStateOf<OrderDto?>(null) }
     var productToDelete by remember { mutableStateOf<PartnerProductDto?>(null) }
+    var productToManageVariations by remember { mutableStateOf<PartnerProductDto?>(null) }
 
     // Show action errors in a dialog
     if (actionError != null) {
@@ -145,7 +146,8 @@ fun PartnerDashboardScreen(
                         isUpdating = isUpdating,
                         onRetry = { viewModel.loadProducts() },
                         onToggleAvailability = { product -> viewModel.toggleProductAvailability(product) },
-                        onDeleteProduct = { product -> productToDelete = product }
+                        onDeleteProduct = { product -> productToDelete = product },
+                        onManageVariations = { product -> productToManageVariations = product }
                     )
                 }
 
@@ -233,6 +235,18 @@ fun PartnerDashboardScreen(
             }
         )
     }
+
+    productToManageVariations?.let { product ->
+        ManageVariationsDialog(
+            product = product,
+            isUpdating = isUpdating,
+            onDismiss = { productToManageVariations = null },
+            onCreateCut = { name -> viewModel.createCutOption(product.id, name) },
+            onDeleteCut = { cutId -> viewModel.deleteCutOption(product.id, cutId) },
+            onCreateWeight = { label, price -> viewModel.createWeightOption(product.id, label, price) },
+            onDeleteWeight = { weightId -> viewModel.deleteWeightOption(product.id, weightId) }
+        )
+    }
 }
 
 // ── Orders Tab ─────────────────────────────────────────────────────────────────
@@ -317,8 +331,12 @@ private fun PartnerOrderCard(
             order.items?.takeIf { it.isNotEmpty() }?.let { items ->
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 items.forEach { item ->
+                    val variationStr = buildString {
+                        if (item.selectedCut != null) append(" - Cut: ${item.selectedCut}")
+                        if (item.selectedWeight != null) append(" - Weight: ${item.selectedWeight}")
+                    }
                     Text(
-                        "• ${item.product.name} × ${item.quantity.toInt()}",
+                        "• ${item.product.name}$variationStr x ${item.quantity.toInt()}",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -335,7 +353,8 @@ private fun ProductsTab(
     isUpdating: Boolean,
     onRetry: () -> Unit,
     onToggleAvailability: (PartnerProductDto) -> Unit,
-    onDeleteProduct: (PartnerProductDto) -> Unit
+    onDeleteProduct: (PartnerProductDto) -> Unit,
+    onManageVariations: (PartnerProductDto) -> Unit
 ) {
     when (state) {
         is PartnerProductsUiState.Loading -> {
@@ -374,7 +393,8 @@ private fun ProductsTab(
                             product = product,
                             isUpdating = isUpdating,
                             onToggleAvailability = onToggleAvailability,
-                            onDeleteProduct = onDeleteProduct
+                            onDeleteProduct = onDeleteProduct,
+                            onManageVariations = onManageVariations
                         )
                     }
                 }
@@ -388,7 +408,8 @@ private fun PartnerProductCard(
     product: PartnerProductDto,
     isUpdating: Boolean,
     onToggleAvailability: (PartnerProductDto) -> Unit,
-    onDeleteProduct: (PartnerProductDto) -> Unit
+    onDeleteProduct: (PartnerProductDto) -> Unit,
+    onManageVariations: (PartnerProductDto) -> Unit
 ) {
     Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(2.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -398,6 +419,13 @@ private fun PartnerProductCard(
                     Text(product.type, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("₹${product.price}", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
                 }
+
+                if (product.type == "RAW_MEAT") {
+                    IconButton(onClick = { onManageVariations(product) }, enabled = !isUpdating) {
+                        Icon(Icons.Default.Edit, contentDescription = "Manage Variations", tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+
                 // Availability toggle — sends only isAvailable, no partnerId
                 Switch(
                     checked = product.isAvailable,
@@ -515,6 +543,107 @@ private fun CreateProductDialog(
         },
         dismissButton = {
             TextButton(onClick = { if (!isUpdating) onDismiss() }, enabled = !isUpdating) { Text("Cancel") }
+        }
+    )
+}
+
+
+// -- Variations Dialog ---------------------------------------------------
+
+@Composable
+private fun ManageVariationsDialog(
+    product: PartnerProductDto,
+    isUpdating: Boolean,
+    onDismiss: () -> Unit,
+    onCreateCut: (String) -> Unit,
+    onDeleteCut: (String) -> Unit,
+    onCreateWeight: (String, Double) -> Unit,
+    onDeleteWeight: (String) -> Unit
+) {
+    var newCutName by remember { mutableStateOf("") }
+    var newWeightLabel by remember { mutableStateOf("") }
+    var newWeightPrice by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Manage Variations") },
+        text = {
+            LazyColumn {
+                item {
+                    Text("Cuts", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
+                }
+                items(product.cutOptions) { cut ->
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Text(cut.name, modifier = Modifier.weight(1f))
+                        IconButton(onClick = { onDeleteCut(cut.id) }, enabled = !isUpdating) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                        }
+                    }
+                }
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = newCutName,
+                            onValueChange = { newCutName = it },
+                            label = { Text("New Cut") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(
+                            onClick = { onCreateCut(newCutName); newCutName = "" },
+                            enabled = !isUpdating && newCutName.isNotBlank()
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "Add Cut")
+                        }
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                    Text("Weights", fontWeight = FontWeight.Bold)
+                }
+                items(product.weightOptions) { weight ->
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Text(weight.weightLabel + " - ${weight.priceOverride}", modifier = Modifier.weight(1f))
+                        IconButton(onClick = { onDeleteWeight(weight.id) }, enabled = !isUpdating) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                        }
+                    }
+                }
+                item {
+                    Column {
+                        OutlinedTextField(
+                            value = newWeightLabel,
+                            onValueChange = { newWeightLabel = it },
+                            label = { Text("New Weight Label") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            OutlinedTextField(
+                                value = newWeightPrice,
+                                onValueChange = { newWeightPrice = it },
+                                label = { Text("Price Override") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = {
+                                    val price = newWeightPrice.toDoubleOrNull()
+                                    if (price != null) {
+                                        onCreateWeight(newWeightLabel, price)
+                                        newWeightLabel = ""
+                                        newWeightPrice = ""
+                                    }
+                                },
+                                enabled = !isUpdating && newWeightLabel.isNotBlank() && newWeightPrice.toDoubleOrNull() != null
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = "Add Weight")
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text("Close")
+            }
         }
     )
 }

@@ -18,21 +18,27 @@ export class CartController {
 
   @Post('items')
   addItem(@CurrentUser() user: User, @Body() addCartItemDto: AddCartItemDto) {
-    return this.cartService.addItem(user.id, addCartItemDto.productId, addCartItemDto.quantity);
+    return this.cartService.addItem(
+      user.id,
+      addCartItemDto.productId,
+      addCartItemDto.quantity,
+      addCartItemDto.cutOptionId,
+      addCartItemDto.weightOptionId
+    );
   }
 
-  @Patch('items/:productId')
+  @Patch('items/:itemId')
   updateItemQuantity(
     @CurrentUser() user: User,
-    @Param('productId') productId: string,
+    @Param('itemId') itemId: string,
     @Body() updateCartItemDto: UpdateCartItemDto,
   ) {
-    return this.cartService.updateItemQuantity(user.id, productId, updateCartItemDto.quantity);
+    return this.cartService.updateItemQuantity(user.id, itemId, updateCartItemDto.quantity);
   }
 
-  @Delete('items/:productId')
-  removeItem(@CurrentUser() user: User, @Param('productId') productId: string) {
-    return this.cartService.removeItem(user.id, productId);
+  @Delete('items/:itemId')
+  removeItem(@CurrentUser() user: User, @Param('itemId') itemId: string) {
+    return this.cartService.removeItem(user.id, itemId);
   }
 
   @Delete()

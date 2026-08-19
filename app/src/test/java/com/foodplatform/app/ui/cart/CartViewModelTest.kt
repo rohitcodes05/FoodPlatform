@@ -27,7 +27,7 @@ class CartViewModelTest {
 
         override suspend fun getCart(): Resource<CartDto> = mockCartResponse
 
-        override suspend fun addItem(productId: String, quantity: Int): Resource<Unit> {
+        override suspend fun addItem(productId: String, quantity: Int, cutOptionId: String?, weightOptionId: String?): Resource<Unit> {
             if (mockActionResponse is Resource.Success) notifyCartUpdated()
             return mockActionResponse
         }
@@ -74,7 +74,7 @@ class CartViewModelTest {
     @Test
     fun loadCart_success_updatesUiStateToSuccess() = runTest {
         val mockProduct = ProductDto("p1", "Burger", "Desc", ProductType.COOKED_FOOD, 10.0, true)
-        val mockCartItem = CartItemDto("item1", "cart1", "p1", 2.0, mockProduct)
+        val mockCartItem = CartItemDto("item1", "cart1", "p1", null, null, 2.0, mockProduct, null, null)
         val mockCart = CartDto("cart1", "user1", listOf(mockCartItem))
 
         repository.mockCartResponse = Resource.Success(mockCart)
@@ -101,7 +101,7 @@ class CartViewModelTest {
         repository.mockActionResponse = Resource.Success(Unit)
 
         val mockProduct = ProductDto("p1", "Burger", "Desc", ProductType.COOKED_FOOD, 10.0, true)
-        val mockCartItem = CartItemDto("item1", "cart1", "p1", 3.0, mockProduct)
+        val mockCartItem = CartItemDto("item1", "cart1", "p1", null, null, 3.0, mockProduct, null, null)
         val mockCartLoaded = CartDto("cart1", "user1", listOf(mockCartItem))
 
         repository.mockCartResponse = Resource.Success(mockCartLoaded)

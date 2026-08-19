@@ -12,6 +12,8 @@ data class PartnerProductDto(
     val isAvailable: Boolean,
     val partnerId: String? = null,
     val categories: List<CategoryDto> = emptyList(),
+    val cutOptions: List<CutOptionDto> = emptyList(),
+    val weightOptions: List<WeightOptionDto> = emptyList(),
     val createdAt: String? = null,
     val updatedAt: String? = null
 )
@@ -40,4 +42,26 @@ data class UpdatePartnerProductRequest(
 
 data class UpdatePartnerOrderStatusRequest(
     val status: String
+)
+
+data class CreateCutOptionRequest(
+    val name: String,
+    val isAvailable: Boolean = true
+)
+
+data class UpdateCutOptionRequest(
+    val name: String? = null,
+    val isAvailable: Boolean? = null
+)
+
+data class CreateWeightOptionRequest(
+    val weightLabel: String,
+    val priceOverride: Double,
+    val isAvailable: Boolean = true
+)
+
+data class UpdateWeightOptionRequest(
+    val weightLabel: String? = null,
+    val priceOverride: Double? = null,
+    val isAvailable: Boolean? = null
 )

@@ -87,15 +87,15 @@ fun CartScreen(
                                 items(state.cart.items, key = { it.id }) { item ->
                                     CartItemRow(
                                         item = item,
-                                        onIncrement = { viewModel.updateQuantity(item.productId, item.quantity.toInt() + 1) },
+                                        onIncrement = { viewModel.updateQuantity(item.id, item.quantity.toInt() + 1) },
                                         onDecrement = {
                                             if (item.quantity.toInt() > 1) {
-                                                viewModel.updateQuantity(item.productId, item.quantity.toInt() - 1)
+                                                viewModel.updateQuantity(item.id, item.quantity.toInt() - 1)
                                             } else {
-                                                viewModel.removeItem(item.productId)
+                                                viewModel.removeItem(item.id)
                                             }
                                         },
-                                        onRemove = { viewModel.removeItem(item.productId) },
+                                        onRemove = { viewModel.removeItem(item.id) },
                                         enabled = !isActionLoading
                                     )
                                 }
@@ -167,7 +167,17 @@ fun CartItemRow(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = item.product.name, style = MaterialTheme.typography.titleMedium)
-                Text(text = "$${item.product.price}", style = MaterialTheme.typography.bodyMedium)
+
+                val price = item.weightOption?.priceOverride ?: item.product.price
+                Text(text = "$${price}", style = MaterialTheme.typography.bodyMedium)
+
+                if (item.cutOption != null) {
+                    Text(text = "Cut: ${item.cutOption.name}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (item.weightOption != null) {
+                    Text(text = "Weight: ${item.weightOption.weightLabel}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+
                 if (!item.product.isAvailable) {
                     Text(text = "Currently unavailable", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }

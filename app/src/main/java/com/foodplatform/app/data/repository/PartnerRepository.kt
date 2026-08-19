@@ -109,16 +109,66 @@ class PartnerRepository(private val partnerApi: PartnerApi) {
             if (response.isSuccessful) {
                 Result.success(Unit)
             } else {
-                val errBody = response.errorBody()?.string()
-                val msg = if (response.code() == 409) {
-                    "Product has existing orders and cannot be deleted"
-                } else {
-                    parseErrorMessage(errBody, "Failed to delete product")
-                }
-                Result.failure(Exception(msg))
+            val errBody = response.errorBody()?.string()
+            val msg = if (response.code() == 409) {
+                "Product has existing orders and cannot be deleted"
+            } else {
+                parseErrorMessage(errBody, "Failed to delete product")
             }
-        } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(msg))
         }
+    } catch (e: Exception) {
+        Result.failure(e)
     }
+}
+
+// ── Variations (Cuts) ───────────────────────────────────────────────────
+
+suspend fun createCutOption(productId: String, name: String, isAvailable: Boolean = true) = withContext(Dispatchers.IO) {
+    try {
+        val request = com.foodplatform.app.data.remote.CreateCutOptionRequest(name, isAvailable)
+        val response = partnerApi.createCutOption(productId, request)
+        if (response.isSuccessful) Result.success(response.body()!!) else Result.failure(Exception(parseErrorMessage(response.errorBody()?.string(), "Failed to create cut option")))
+    } catch (e: Exception) { Result.failure(e) }
+}
+
+suspend fun updateCutOption(productId: String, cutId: String, name: String?, isAvailable: Boolean?) = withContext(Dispatchers.IO) {
+    try {
+        val request = com.foodplatform.app.data.remote.UpdateCutOptionRequest(name, isAvailable)
+        val response = partnerApi.updateCutOption(productId, cutId, request)
+        if (response.isSuccessful) Result.success(response.body()!!) else Result.failure(Exception(parseErrorMessage(response.errorBody()?.string(), "Failed to update cut option")))
+    } catch (e: Exception) { Result.failure(e) }
+}
+
+suspend fun deleteCutOption(productId: String, cutId: String) = withContext(Dispatchers.IO) {
+    try {
+        val response = partnerApi.deleteCutOption(productId, cutId)
+        if (response.isSuccessful) Result.success(Unit) else Result.failure(Exception(parseErrorMessage(response.errorBody()?.string(), "Failed to delete cut option")))
+    } catch (e: Exception) { Result.failure(e) }
+}
+
+// ── Variations (Weights) ────────────────────────────────────────────────
+
+suspend fun createWeightOption(productId: String, weightLabel: String, priceOverride: Double, isAvailable: Boolean = true) = withContext(Dispatchers.IO) {
+    try {
+        val request = com.foodplatform.app.data.remote.CreateWeightOptionRequest(weightLabel, priceOverride, isAvailable)
+        val response = partnerApi.createWeightOption(productId, request)
+        if (response.isSuccessful) Result.success(response.body()!!) else Result.failure(Exception(parseErrorMessage(response.errorBody()?.string(), "Failed to create weight option")))
+    } catch (e: Exception) { Result.failure(e) }
+}
+
+suspend fun updateWeightOption(productId: String, weightId: String, weightLabel: String?, priceOverride: Double?, isAvailable: Boolean?) = withContext(Dispatchers.IO) {
+    try {
+        val request = com.foodplatform.app.data.remote.UpdateWeightOptionRequest(weightLabel, priceOverride, isAvailable)
+        val response = partnerApi.updateWeightOption(productId, weightId, request)
+        if (response.isSuccessful) Result.success(response.body()!!) else Result.failure(Exception(parseErrorMessage(response.errorBody()?.string(), "Failed to update weight option")))
+    } catch (e: Exception) { Result.failure(e) }
+}
+
+suspend fun deleteWeightOption(productId: String, weightId: String) = withContext(Dispatchers.IO) {
+    try {
+        val response = partnerApi.deleteWeightOption(productId, weightId)
+        if (response.isSuccessful) Result.success(Unit) else Result.failure(Exception(parseErrorMessage(response.errorBody()?.string(), "Failed to delete weight option")))
+    } catch (e: Exception) { Result.failure(e) }
+}
 }

@@ -151,6 +151,48 @@ class PartnerDashboardViewModel(
     fun clearActionError() {
         _actionError.value = null
     }
+
+    // ── Variations ──────────────────────────────────────────────────────────
+
+    fun createCutOption(productId: String, name: String) {
+        _isUpdating.value = true
+        _actionError.value = null
+        viewModelScope.launch {
+            partnerRepository.createCutOption(productId, name)
+                .onSuccess { loadProducts(); _isUpdating.value = false }
+                .onFailure { _isUpdating.value = false; _actionError.value = it.message }
+        }
+    }
+
+    fun deleteCutOption(productId: String, cutId: String) {
+        _isUpdating.value = true
+        _actionError.value = null
+        viewModelScope.launch {
+            partnerRepository.deleteCutOption(productId, cutId)
+                .onSuccess { loadProducts(); _isUpdating.value = false }
+                .onFailure { _isUpdating.value = false; _actionError.value = it.message }
+        }
+    }
+
+    fun createWeightOption(productId: String, weightLabel: String, priceOverride: Double) {
+        _isUpdating.value = true
+        _actionError.value = null
+        viewModelScope.launch {
+            partnerRepository.createWeightOption(productId, weightLabel, priceOverride)
+                .onSuccess { loadProducts(); _isUpdating.value = false }
+                .onFailure { _isUpdating.value = false; _actionError.value = it.message }
+        }
+    }
+
+    fun deleteWeightOption(productId: String, weightId: String) {
+        _isUpdating.value = true
+        _actionError.value = null
+        viewModelScope.launch {
+            partnerRepository.deleteWeightOption(productId, weightId)
+                .onSuccess { loadProducts(); _isUpdating.value = false }
+                .onFailure { _isUpdating.value = false; _actionError.value = it.message }
+        }
+    }
 }
 
 // ── Factory ───────────────────────────────────────────────────────────────────

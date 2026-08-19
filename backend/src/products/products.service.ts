@@ -40,7 +40,9 @@ export class ProductsService {
         include: {
           categories: {
             select: { id: true, name: true }
-          }
+          },
+          cutOptions: { where: { isAvailable: true } },
+          weightOptions: { where: { isAvailable: true } },
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -70,7 +72,7 @@ export class ProductsService {
           connect: data.categoryIds?.map(id => ({ id })) || []
         }
       },
-      include: { categories: true }
+      include: { categories: true, cutOptions: true, weightOptions: true }
     });
   }
 
@@ -89,7 +91,7 @@ export class ProductsService {
           }
         })
       },
-      include: { categories: true }
+      include: { categories: true, cutOptions: true, weightOptions: true }
     });
   }
 
@@ -99,7 +101,9 @@ export class ProductsService {
       include: {
         categories: {
           select: { id: true, name: true }
-        }
+        },
+        cutOptions: { where: { isAvailable: true } },
+        weightOptions: { where: { isAvailable: true } },
       }
     });
 

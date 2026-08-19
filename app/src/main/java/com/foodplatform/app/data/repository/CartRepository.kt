@@ -27,9 +27,9 @@ open class CartRepository(
         }
     }
 
-    open suspend fun addItem(productId: String, quantity: Int): Resource<Unit> {
+    open suspend fun addItem(productId: String, quantity: Int, cutOptionId: String? = null, weightOptionId: String? = null): Resource<Unit> {
         return try {
-            cartApi.addItem(AddCartItemRequest(productId, quantity))
+            cartApi.addItem(AddCartItemRequest(productId, quantity, cutOptionId, weightOptionId))
             notifyCartUpdated()
             Resource.Success(Unit)
         } catch (e: Exception) {
@@ -37,9 +37,9 @@ open class CartRepository(
         }
     }
 
-    open suspend fun updateItemQuantity(productId: String, quantity: Int): Resource<Unit> {
+    open suspend fun updateItemQuantity(itemId: String, quantity: Int): Resource<Unit> {
         return try {
-            cartApi.updateItemQuantity(productId, UpdateCartItemRequest(quantity))
+            cartApi.updateItemQuantity(itemId, UpdateCartItemRequest(quantity))
             notifyCartUpdated()
             Resource.Success(Unit)
         } catch (e: Exception) {
@@ -47,9 +47,9 @@ open class CartRepository(
         }
     }
 
-    open suspend fun removeItem(productId: String): Resource<Unit> {
+    open suspend fun removeItem(itemId: String): Resource<Unit> {
         return try {
-            cartApi.removeItem(productId)
+            cartApi.removeItem(itemId)
             notifyCartUpdated()
             Resource.Success(Unit)
         } catch (e: Exception) {

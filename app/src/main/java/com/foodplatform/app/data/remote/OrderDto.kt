@@ -31,6 +31,8 @@ data class OrderItemDto(
     val id: String,
     val quantity: String,
     val purchasePrice: String,
+    val selectedCut: String?,
+    val selectedWeight: String?,
     val product: ProductDto,
     val review: ReviewDto? = null
 )

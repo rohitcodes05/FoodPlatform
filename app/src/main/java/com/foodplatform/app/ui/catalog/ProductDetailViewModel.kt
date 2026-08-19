@@ -62,12 +62,12 @@ class ProductDetailViewModel(
         }
     }
 
-    fun addToCart(productId: String, quantity: Int) {
+    fun addToCart(productId: String, quantity: Int, cutOptionId: String? = null, weightOptionId: String? = null) {
         if (_isAddingToCart.value) return
         _isAddingToCart.value = true
 
         viewModelScope.launch {
-            when (val result = cartRepository.addItem(productId, quantity)) {
+            when (val result = cartRepository.addItem(productId, quantity, cutOptionId, weightOptionId)) {
                 is Resource.Success<*> -> {
                     _addToCartEvent.value = "Success"
                 }

@@ -110,14 +110,18 @@ export class PartnersService {
     });
   }
 
-  // ─── Partner Product Management ────────────────────────────────────────────
+  // ── Partner Product Management ──────────────────────────────────────────────
 
   async getPartnerProducts(userId: string) {
     const partner = await this.getMyPartnerProfile(userId);
 
     return this.prisma.product.findMany({
       where: { partnerId: partner.id },
-      include: { categories: { select: { id: true, name: true } } },
+      include: {
+        categories: { select: { id: true, name: true } },
+        cutOptions: true,
+        weightOptions: true,
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -138,7 +142,11 @@ export class PartnersService {
           connect: dto.categoryIds?.map((id) => ({ id })) ?? [],
         },
       },
-      include: { categories: { select: { id: true, name: true } } },
+      include: {
+        categories: { select: { id: true, name: true } },
+        cutOptions: true,
+        weightOptions: true,
+      },
     });
   }
 
@@ -162,7 +170,11 @@ export class PartnersService {
           categories: { set: dto.categoryIds.map((id) => ({ id })) },
         }),
       },
-      include: { categories: { select: { id: true, name: true } } },
+      include: {
+        categories: { select: { id: true, name: true } },
+        cutOptions: true,
+        weightOptions: true,
+      },
     });
   }
 
@@ -185,5 +197,88 @@ export class PartnersService {
 
     await this.prisma.product.delete({ where: { id: productId } });
     return { message: 'Product deleted successfully' };
+  }
+
+  // ── Raw Seller Variation Management (Cuts) ──────────────────────────────────
+
+  private async verifyProductOwnership(userId: string, productId: string) {
+    const partner = await this.getMyPartnerProfile(userId);
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw new NotFoundException('Product not found');
+    if (product.partnerId !== partner.id)
+      throw new ForbiddenException('You do not have permission to modify this product');
+    return product;
+  }
+
+  async createCutOption(userId: string, productId: string, name: string, isAvailable?: boolean) {
+    await this.verifyProductOwnership(userId, productId);
+    return this.prisma.cutOption.create({
+      data: {
+        productId,
+        name,
+        isAvailable: isAvailable ?? true,
+      }
+    });
+  }
+
+  async updateCutOption(userId: string, productId: string, cutId: string, name?: string, isAvailable?: boolean) {
+    await this.verifyProductOwnership(userId, productId);
+    const cut = await this.prisma.cutOption.findUnique({ where: { id: cutId } });
+    if (!cut || cut.productId !== productId) throw new NotFoundException('Cut option not found on this product');
+
+    return this.prisma.cutOption.update({
+      where: { id: cutId },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(isAvailable !== undefined && { isAvailable }),
+      }
+    });
+  }
+
+  async deleteCutOption(userId: string, productId: string, cutId: string) {
+    await this.verifyProductOwnership(userId, productId);
+    const cut = await this.prisma.cutOption.findUnique({ where: { id: cutId } });
+    if (!cut || cut.productId !== productId) throw new NotFoundException('Cut option not found on this product');
+
+    await this.prisma.cutOption.delete({ where: { id: cutId } });
+    return { message: 'Cut option deleted successfully' };
+  }
+
+  // ── Raw Seller Variation Management (Weights) ───────────────────────────────
+
+  async createWeightOption(userId: string, productId: string, weightLabel: string, priceOverride: number, isAvailable?: boolean) {
+    await this.verifyProductOwnership(userId, productId);
+    return this.prisma.weightOption.create({
+      data: {
+        productId,
+        weightLabel,
+        priceOverride,
+        isAvailable: isAvailable ?? true,
+      }
+    });
+  }
+
+  async updateWeightOption(userId: string, productId: string, weightId: string, weightLabel?: string, priceOverride?: number, isAvailable?: boolean) {
+    await this.verifyProductOwnership(userId, productId);
+    const weight = await this.prisma.weightOption.findUnique({ where: { id: weightId } });
+    if (!weight || weight.productId !== productId) throw new NotFoundException('Weight option not found on this product');
+
+    return this.prisma.weightOption.update({
+      where: { id: weightId },
+      data: {
+        ...(weightLabel !== undefined && { weightLabel }),
+        ...(priceOverride !== undefined && { priceOverride }),
+        ...(isAvailable !== undefined && { isAvailable }),
+      }
+    });
+  }
+
+  async deleteWeightOption(userId: string, productId: string, weightId: string) {
+    await this.verifyProductOwnership(userId, productId);
+    const weight = await this.prisma.weightOption.findUnique({ where: { id: weightId } });
+    if (!weight || weight.productId !== productId) throw new NotFoundException('Weight option not found on this product');
+
+    await this.prisma.weightOption.delete({ where: { id: weightId } });
+    return { message: 'Weight option deleted successfully' };
   }
 }

@@ -41,4 +41,46 @@ interface PartnerApi {
     suspend fun deletePartnerProduct(
         @Path("id") id: String
     ): Response<Unit>
+
+    // ── Variations (Cuts) ───────────────────────────────────────────────────
+
+    @POST("partners/products/{id}/cuts")
+    suspend fun createCutOption(
+        @Path("id") productId: String,
+        @Body request: CreateCutOptionRequest
+    ): Response<CutOptionDto>
+
+    @PATCH("partners/products/{id}/cuts/{cutId}")
+    suspend fun updateCutOption(
+        @Path("id") productId: String,
+        @Path("cutId") cutId: String,
+        @Body request: UpdateCutOptionRequest
+    ): Response<CutOptionDto>
+
+    @DELETE("partners/products/{id}/cuts/{cutId}")
+    suspend fun deleteCutOption(
+        @Path("id") productId: String,
+        @Path("cutId") cutId: String
+    ): Response<Unit>
+
+    // ── Variations (Weights) ────────────────────────────────────────────────
+
+    @POST("partners/products/{id}/weights")
+    suspend fun createWeightOption(
+        @Path("id") productId: String,
+        @Body request: CreateWeightOptionRequest
+    ): Response<WeightOptionDto>
+
+    @PATCH("partners/products/{id}/weights/{weightId}")
+    suspend fun updateWeightOption(
+        @Path("id") productId: String,
+        @Path("weightId") weightId: String,
+        @Body request: UpdateWeightOptionRequest
+    ): Response<WeightOptionDto>
+
+    @DELETE("partners/products/{id}/weights/{weightId}")
+    suspend fun deleteWeightOption(
+        @Path("id") productId: String,
+        @Path("weightId") weightId: String
+    ): Response<Unit>
 }

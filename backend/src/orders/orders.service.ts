@@ -17,7 +17,15 @@ export class OrdersService {
           // 1. Fetch Cart
           const cart = await tx.cart.findUnique({
             where: { userId },
-            include: { items: { include: { product: true } } },
+            include: {
+              items: {
+                include: {
+                  product: true,
+                  cutOption: true,
+                  weightOption: true,
+                }
+              }
+            },
           });
           if (!cart || cart.items.length === 0) {
             throw new BadRequestException('Cart is empty');
@@ -47,8 +55,15 @@ export class OrdersService {
             if (!item.product.isAvailable) {
               throw new BadRequestException(`Product ${item.product.name} is no longer available`);
             }
-            
-            const price = new Prisma.Decimal(item.product.price);
+            if (item.cutOptionId && !item.cutOption?.isAvailable) {
+              throw new BadRequestException(`Cut option ${item.cutOption?.name} is no longer available`);
+            }
+            if (item.weightOptionId && !item.weightOption?.isAvailable) {
+              throw new BadRequestException(`Weight option ${item.weightOption?.weightLabel} is no longer available`);
+            }
+
+            // Server-side pricing: override with weight option if selected
+            const price = item.weightOption ? new Prisma.Decimal(item.weightOption.priceOverride) : new Prisma.Decimal(item.product.price);
             const quantity = new Prisma.Decimal(item.quantity);
             const itemTotal = price.mul(quantity);
             totalAmount = totalAmount.add(itemTotal);
@@ -57,14 +72,21 @@ export class OrdersService {
               product: { connect: { id: item.productId } },
               purchasePrice: price,
               quantity: quantity,
+              selectedCut: item.cutOption?.name || null,
+              selectedWeight: item.weightOption?.weightLabel || null,
             });
           }
+
+          // Automatically infer partnerId for the Order if all products belong to the same partner
+          // (In a real marketplace, carts might be split by partner. For now, we take the first product's partner)
+          const orderPartnerId = cart.items[0].product.partnerId;
 
           // 5. Create Order & OrderAddressSnapshot
           const order = await tx.order.create({
             data: {
               user: { connect: { id: userId } },
               fulfillmentPoint: { connect: { id: fulfillmentPoint.id } },
+              ...(orderPartnerId ? { partner: { connect: { id: orderPartnerId } } } : {}),
               totalAmount,
               status: 'PENDING',
               items: {

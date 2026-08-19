@@ -258,6 +258,12 @@ fun OrderItemRow(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(item.product.name, fontWeight = FontWeight.Bold)
+                    if (item.selectedCut != null) {
+                        Text("Cut: ${item.selectedCut}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (item.selectedWeight != null) {
+                        Text("Weight: ${item.selectedWeight}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                     Text("Qty: ${item.quantity}")
                 }
                 Text("$${item.purchasePrice}", fontWeight = FontWeight.Bold)
