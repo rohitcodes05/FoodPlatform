@@ -1,0 +1,1 @@
+﻿import { IsEnum, IsNotEmpty } from 'class-validator'; import { OrderStatus } from '../../../generated/prisma/client.js'; export class UpdatePartnerOrderStatusDto { @IsEnum(OrderStatus) @IsNotEmpty() status: OrderStatus; }
