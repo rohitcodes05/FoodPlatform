@@ -1,0 +1,1 @@
+﻿import { IsEnum, IsNotEmpty, IsString } from 'class-validator'; import { PartnerType } from '../../../generated/prisma/client.js'; export class CreatePartnerDto { @IsString() @IsNotEmpty() businessName: string; @IsEnum(PartnerType) type: PartnerType; }
