@@ -116,6 +116,12 @@ fun AppNavigation(authViewModel: AuthViewModel) {
                 )
             }
 
+            val partnerRepository = remember {
+                com.foodplatform.app.data.repository.PartnerRepository(
+                    com.foodplatform.app.data.remote.NetworkModule.providePartnerApi(retrofit)
+                )
+            }
+
             NavHost(navController = navController, startDestination = "auth_flow") {
                 navigation(startDestination = "catalog", route = "auth_flow") {
                     composable("catalog") { backStackEntry ->
@@ -228,6 +234,7 @@ fun AppNavigation(authViewModel: AuthViewModel) {
                             onNavigateToOrderHistory = { navController.navigate("order_history") },
                             onNavigateToAddresses = { navController.navigate("addresses") },
                             onNavigateToAdmin = { navController.navigate("admin_dashboard") },
+                            onNavigateToPartnerDashboard = { navController.navigate("partner_dashboard") },
                             onNavigateToLogin = {
                                 SessionManager.setUnauthenticated()
                             },
@@ -278,6 +285,16 @@ fun AppNavigation(authViewModel: AuthViewModel) {
                         )
                         com.foodplatform.app.ui.admin.AdminDashboardScreen(
                             viewModel = adminViewModel,
+                            onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
+
+                    composable("partner_dashboard") {
+                        val partnerViewModel: com.foodplatform.app.ui.partner.PartnerDashboardViewModel = viewModel(
+                            factory = com.foodplatform.app.ui.partner.PartnerDashboardViewModelFactory(partnerRepository)
+                        )
+                        com.foodplatform.app.ui.partner.PartnerDashboardScreen(
+                            viewModel = partnerViewModel,
                             onNavigateBack = { navController.popBackStack() }
                         )
                     }

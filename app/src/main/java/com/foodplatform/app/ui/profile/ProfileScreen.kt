@@ -1,4 +1,4 @@
-﻿package com.foodplatform.app.ui.profile
+package com.foodplatform.app.ui.profile
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -22,6 +22,7 @@ fun ProfileScreen(
     onNavigateToOrderHistory: () -> Unit,
     onNavigateToAddresses: () -> Unit,
     onNavigateToAdmin: () -> Unit,
+    onNavigateToPartnerDashboard: () -> Unit,
     onNavigateToLogin: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
@@ -143,7 +144,26 @@ fun ProfileScreen(
                             }
                         }
 
+                        // VENDOR role check — UI visibility only.
+                        // Authorization is enforced server-side by JwtAuthGuard + @Roles(Role.VENDOR).
+                        if (state.user.roles?.any { it.role == "VENDOR" } == true) {
+                            Spacer(modifier = Modifier.height(32.dp))
+                            HorizontalDivider()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("Partner Settings", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Button(
+                                onClick = onNavigateToPartnerDashboard,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
+                            ) {
+                                Text("Partner Dashboard")
+                            }
+                        }
+
                         Spacer(modifier = Modifier.weight(1f))
+
 
                         OutlinedButton(
                             onClick = { viewModel.logout() },

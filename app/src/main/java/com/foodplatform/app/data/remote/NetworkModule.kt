@@ -68,4 +68,8 @@ object NetworkModule {
     fun provideReviewApi(retrofit: Retrofit): ReviewApi {
         return retrofit.create(ReviewApi::class.java)
     }
+
+    fun providePartnerApi(retrofit: Retrofit): PartnerApi {
+        return retrofit.create(PartnerApi::class.java)
+    }
 }
